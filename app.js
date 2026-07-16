@@ -236,7 +236,7 @@ async function initializeApplication() {
   applySavedTheme();
   renderCurrentDate();
   renderCurrentYear();
-  renderDailyContent();
+  await renderDailyContent();
   setActiveUser(activeUser);
 
   try {
