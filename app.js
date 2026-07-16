@@ -1152,6 +1152,7 @@ function getDayNumberOfYear(date) {
       0
     );
 
+
   const difference =
     date - startOfYear;
 
@@ -1162,7 +1163,107 @@ function getDayNumberOfYear(date) {
     difference / oneDay
   );
 }
+async function loadDailyPrayer() {
+  /*
+    Dua sistemi 16 Temmuz 2026 tarihinde başlıyor.
+    Her gün bir sonraki dua gösterilir.
+  */
+  const startDate =
+    new Date(2026, 6, 16);
 
+  const today =
+    new Date();
+
+  const currentDate =
+    new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+  const normalizedStartDate =
+    new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+
+  const oneDay =
+    1000 * 60 * 60 * 24;
+
+  const dayIndex =
+    Math.floor(
+      (
+        currentDate -
+        normalizedStartDate
+      ) / oneDay
+    );
+
+  const { data, error } =
+    await window.niyetSupabase
+      .from("daily_prayers")
+      .select(
+        "id, title, content, category, source_type, source_name, source_reference, display_order"
+      )
+      .eq("is_active", true)
+      .order("display_order", {
+        ascending: true
+      });
+
+  if (error) {
+    throw error;
+  }
+
+  if (
+    !data ||
+    data.length === 0
+  ) {
+    throw new Error(
+      "Günlük dua listesi boş."
+    );
+  }
+
+  /*
+    Modulo kullanmıyoruz.
+    Böylece liste bittiğinde başa dönüp
+    aynı duayı tekrar göstermeyecek.
+  */
+  if (
+    dayIndex < 0 ||
+    dayIndex >= data.length
+  ) {
+    throw new Error(
+      "Yeni günlük dualar eklenmesi gerekiyor."
+    );
+  }
+
+  const prayer =
+    data[dayIndex];
+
+  setText(
+    "dailyPrayerTitle",
+    prayer.title
+  );
+
+  setText(
+    "dailyPrayerText",
+    prayer.content
+  );
+
+  const sourceParts = [
+    prayer.source_name,
+    prayer.source_reference
+  ].filter(Boolean);
+
+  setText(
+    "dailyPrayerSource",
+    sourceParts.length > 0
+      ? `Kaynak: ${sourceParts.join(" · ")}`
+      : "Tür: Genel dua"
+  );
+
+  return prayer;
+}
 async function loadDailyContentActions() {
   const { data, error } =
     await window.niyetSupabase
