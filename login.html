@@ -1,1 +1,217 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
 
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta
+    name="description"
+    content="Niyet uygulamasına giriş yap."
+  >
+
+  <meta name="theme-color" content="#0d100c">
+
+  <title>Niyet | Giriş</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="login-page">
+
+  <div class="background-glow background-glow-one" aria-hidden="true"></div>
+  <div class="background-glow background-glow-two" aria-hidden="true"></div>
+
+  <main class="login-layout">
+
+    <section class="login-intro">
+      <a href="index.html" class="brand login-brand">
+        <span class="brand-icon" aria-hidden="true">🌙</span>
+
+        <span class="brand-text">
+          <strong>Niyet</strong>
+          <small>Birlikte, huzurla, istikrarla</small>
+        </span>
+      </a>
+
+      <div class="login-intro-content">
+        <p class="eyebrow">Ortak manevi yolculuk</p>
+
+        <h1>
+          Kalbine iyi geleni
+          <span>birlikte sürdür.</span>
+        </h1>
+
+        <p>
+          Bu alan yalnızca Damla ve Hilal için hazırlanmıştır.
+          Burada yarışmak, kıyaslanmak veya kusursuz olmak gerekmez.
+          Sadece yeniden niyet etmek yeterlidir.
+        </p>
+      </div>
+
+      <blockquote class="login-quote">
+        “Daha çok yapmak için yarışmak değil, birlikte ve samimiyetle
+        devam edebilmek.”
+      </blockquote>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-card">
+        <div class="login-card-header">
+          <span class="login-card-icon" aria-hidden="true">☾</span>
+
+          <div>
+            <p class="eyebrow">Hoş geldin</p>
+            <h2>Niyet'e Giriş Yap</h2>
+          </div>
+        </div>
+
+        <p class="login-description">
+          Kendi kayıtlarını görüntülemek ve günün niyetlerini işaretlemek
+          için hesabını seç.
+        </p>
+
+        <form id="loginForm" class="login-form" novalidate>
+
+          <div class="login-user-selection">
+            <button
+              type="button"
+              class="login-user-option active"
+              data-login-user="damla"
+              aria-pressed="true"
+            >
+              <span class="user-avatar damla-avatar">D</span>
+
+              <span class="login-user-info">
+                <strong>Damla</strong>
+                <small>Damla hesabıyla devam et</small>
+              </span>
+
+              <span class="login-user-check" aria-hidden="true">✓</span>
+            </button>
+
+            <button
+              type="button"
+              class="login-user-option"
+              data-login-user="hilal"
+              aria-pressed="false"
+            >
+              <span class="user-avatar hilal-avatar">H</span>
+
+              <span class="login-user-info">
+                <strong>Hilal</strong>
+                <small>Hilal hesabıyla devam et</small>
+              </span>
+
+              <span class="login-user-check" aria-hidden="true">✓</span>
+            </button>
+          </div>
+
+          <input
+            type="hidden"
+            id="selectedLoginUser"
+            name="selectedUser"
+            value="damla"
+          >
+
+          <div class="form-field">
+            <label for="username">
+              Kullanıcı adı
+            </label>
+
+            <div class="input-wrapper">
+              <span class="input-icon" aria-hidden="true">◌</span>
+
+              <input
+                type="text"
+                id="username"
+                name="username"
+                autocomplete="username"
+                placeholder="Kullanıcı adını yaz"
+                required
+              >
+            </div>
+
+            <small class="field-error" id="usernameError"></small>
+          </div>
+
+          <div class="form-field">
+            <label for="password">
+              Şifre
+            </label>
+
+            <div class="input-wrapper">
+              <span class="input-icon" aria-hidden="true">⌁</span>
+
+              <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="Şifreni yaz"
+                required
+              >
+
+              <button
+                type="button"
+                class="password-toggle"
+                id="passwordToggle"
+                aria-label="Şifreyi göster"
+                title="Şifreyi göster"
+              >
+                👁
+              </button>
+            </div>
+
+            <small class="field-error" id="passwordError"></small>
+          </div>
+
+          <div
+            class="login-message hidden"
+            id="loginMessage"
+            role="alert"
+            aria-live="polite"
+          ></div>
+
+          <button type="submit" class="primary-button login-submit-button">
+            <span aria-hidden="true">🌙</span>
+            Giriş Yap
+          </button>
+        </form>
+
+        <div class="login-security-note">
+          <span aria-hidden="true">🔒</span>
+
+          <p>
+            Şu an bu giriş sistemi yalnızca tarayıcı üzerinde çalışan
+            geçici bir demo sürümüdür. Cloudflare D1 bağlantısı eklendiğinde
+            şifreler veritabanında güvenli şekilde kontrol edilecektir.
+          </p>
+        </div>
+
+        <a href="index.html" class="back-home-link">
+          Giriş yapmadan ana sayfayı görüntüle
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    <span class="toast-icon" aria-hidden="true">🌿</span>
+    <p id="toastMessage">Kaydedildi.</p>
+  </div>
+
+  <script src="functions/login.js" defer></script>
+</body>
+</html>
