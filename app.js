@@ -214,7 +214,16 @@ let toastTimer = null;
    SAYFA BAŞLANGICI
 ========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  const authenticatedUser =
+    await window.niyetAuthReady;
+
+  if (!authenticatedUser) {
+    return;
+  }
+
+  activeUser = authenticatedUser.username;
+
   initializeApplication();
 });
 
