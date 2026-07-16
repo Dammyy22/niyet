@@ -893,11 +893,32 @@ async function loadDailyPrayer() {
     prayer.title
   );
 
-  setText(
-    "dailyPrayerText",
-    prayer.content
+try {
+  await loadDailyPrayer();
+} catch (error) {
+  console.error(
+    "Günün duası yüklenemedi:",
+    error
   );
 
+  setText(
+    "dailyPrayerTitle",
+    "Günün Duası"
+  );
+
+  setText(
+    "dailyPrayerText",
+    localContent.prayer
+  );
+
+  setText(
+    "dailyPrayerSource",
+    error.message ===
+      "Yeni günlük dualar eklenmesi gerekiyor."
+      ? "Dua listesi tamamlandı. Yeni dualar hazırlanıyor."
+      : "Kayıtlı yedek dua gösteriliyor."
+  );
+}
   const sourceElement =
     document.getElementById(
       "dailyPrayerSource"
@@ -915,7 +936,7 @@ async function loadDailyPrayer() {
         : "Tür: Genel dua";
   }
 }
-async function renderDailyContent() {
+await function renderDailyContent() {
   const today =
     new Date();
 
