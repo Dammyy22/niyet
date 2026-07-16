@@ -826,7 +826,95 @@ function formatReadableDate(
 /* =========================================================
    GÜNLÜK İÇERİK
 ========================================================= */
+async function loadDailyPrayer() {
+  const startDate =
+    new Date(2026, 0, 1);
 
+  const today =
+    new Date();
+
+  const currentDate =
+    new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+  const oneDay =
+    1000 * 60 * 60 * 24;
+
+  const dayIndex =
+    Math.floor(
+      (
+        currentDate -
+        startDate
+      ) / oneDay
+    );
+
+  const { data, error } =
+    await window.niyetSupabase
+      .from("daily_prayers")
+      .select(
+        "id, title, content, category, source_type, source_name, source_reference, display_order"
+      )
+      .eq("is_active", true)
+      .order("display_order", {
+        ascending: true
+      });
+
+  if (error) {
+    throw error;
+  }
+
+  if (
+    !data ||
+    data.length === 0
+  ) {
+    throw new Error(
+      "Günlük dua bulunamadı."
+    );
+  }
+
+  const normalizedIndex =
+    (
+      (
+        dayIndex %
+        data.length
+      ) +
+      data.length
+    ) %
+    data.length;
+
+  const prayer =
+    data[normalizedIndex];
+
+  setText(
+    "dailyPrayerTitle",
+    prayer.title
+  );
+
+  setText(
+    "dailyPrayerText",
+    prayer.content
+  );
+
+  const sourceElement =
+    document.getElementById(
+      "dailyPrayerSource"
+    );
+
+  if (sourceElement) {
+    const sourceParts = [
+      prayer.source_name,
+      prayer.source_reference
+    ].filter(Boolean);
+
+    sourceElement.textContent =
+      sourceParts.length > 0
+        ? `Kaynak: ${sourceParts.join(" · ")}`
+        : "Tür: Genel dua";
+  }
+}
 async function renderDailyContent() {
   const today =
     new Date();
@@ -863,11 +951,29 @@ async function renderDailyContent() {
     "dailyEsmaCount",
     localContent.esma.count
   );
+try {
+  await loadDailyPrayer();
+} catch (error) {
+  console.error(
+    "Günün duası yüklenemedi:",
+    error
+  );
+
+  setText(
+    "dailyPrayerTitle",
+    "Kalbe Ferahlık"
+  );
 
   setText(
     "dailyPrayerText",
     localContent.prayer
   );
+
+  setText(
+    "dailyPrayerSource",
+    "Kayıtlı yedek dua gösteriliyor."
+  );
+}
 
   setText(
     "dailyChallengeText",
