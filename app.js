@@ -6,12 +6,7 @@
 
 const STORAGE_KEYS = {
   activeUser: "niyet_active_user",
-  dailyRecords: "niyet_daily_records",
-  mutualPrayers: "niyet_mutual_prayers",
-  sharedPrayers: "niyet_shared_prayers",
-  dailyNotes: "niyet_daily_notes",
-  theme: "niyet_theme",
-  dailyContentActions: "niyet_daily_content_actions"
+  theme: "niyet_theme"
 };
 
 const USERS = {
@@ -211,7 +206,14 @@ let calendarDate = new Date();
 let toastTimer = null;
 
 let dailyRecordsCache = {};
+let dailyActionsCache = {};
+let mutualPrayersCache = {};
+let sharedPrayersCache = [];
+let dailyNotesCache = {};
+
 let profileIds = {};
+let usernameByProfileId = {};
+
 /* =========================================================
    SAYFA BAŞLANGICI
 ========================================================= */
@@ -224,7 +226,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  activeUser = authenticatedUser.username;
+  activeUser =
+    authenticatedUser.username;
 
   await initializeApplication();
 });
@@ -234,27 +237,31 @@ async function initializeApplication() {
   renderCurrentDate();
   renderCurrentYear();
   renderDailyContent();
-
   setActiveUser(activeUser);
 
   try {
     await loadProfileIds();
-    await loadDailyRecords();
+
+    await Promise.all([
+      loadDailyRecords(),
+      loadDailyContentActions(),
+      loadMutualPrayers(),
+      loadSharedPrayers(),
+      loadDailyNote()
+    ]);
   } catch (error) {
     console.error(
-      "Supabase günlük kayıt sistemi başlatılamadı:",
+      "Supabase verileri yüklenemedi:",
       error
     );
 
     showToast(
-      "Günlük kayıtlar veritabanından yüklenemedi."
+      `Veriler yüklenemedi: ${
+        error.message ||
+        "Bilinmeyen hata"
+      }`
     );
   }
-
-  loadDailyContentActions();
-  loadMutualPrayers();
-  loadSharedPrayers();
-  loadDailyNote();
 
   updateAllProgress();
   calculateMonthlyStatistics();
@@ -283,199 +290,319 @@ function bindEvents() {
 }
 
 function bindProfileMenuEvents() {
-  const profileButton = document.getElementById("profileButton");
-  const profileMenu = document.getElementById("profileMenu");
+  const profileButton =
+    document.getElementById(
+      "profileButton"
+    );
 
-  profileButton?.addEventListener("click", event => {
-    event.stopPropagation();
-    profileMenu?.classList.toggle("hidden");
-  });
+  const profileMenu =
+    document.getElementById(
+      "profileMenu"
+    );
 
-  document.addEventListener("click", event => {
-    if (
-      profileMenu &&
-      profileButton &&
-      !profileMenu.contains(event.target) &&
-      !profileButton.contains(event.target)
-    ) {
-      profileMenu.classList.add("hidden");
+  profileButton?.addEventListener(
+    "click",
+    event => {
+      event.stopPropagation();
+
+      profileMenu?.classList.toggle(
+        "hidden"
+      );
     }
-  });
+  );
+
+  document.addEventListener(
+    "click",
+    event => {
+      if (
+        profileMenu &&
+        profileButton &&
+        !profileMenu.contains(
+          event.target
+        ) &&
+        !profileButton.contains(
+          event.target
+        )
+      ) {
+        profileMenu.classList.add(
+          "hidden"
+        );
+      }
+    }
+  );
 }
 
 function bindThemeEvents() {
-  const themeToggleButton = document.getElementById("themeToggleButton");
+  const themeToggleButton =
+    document.getElementById(
+      "themeToggleButton"
+    );
 
-  themeToggleButton?.addEventListener("click", toggleTheme);
+  themeToggleButton?.addEventListener(
+    "click",
+    toggleTheme
+  );
 }
 
 function bindCheckboxEvents() {
-  const checkboxes = document.querySelectorAll(
-    'input[type="checkbox"][data-user][data-check]'
-  );
+  const checkboxes =
+    document.querySelectorAll(
+      'input[type="checkbox"][data-user][data-check]'
+    );
 
   checkboxes.forEach(checkbox => {
-    checkbox.addEventListener("change", async () => {
-      const userId = checkbox.dataset.user;
-      const checkName = checkbox.dataset.check;
-      const checked = checkbox.checked;
+    checkbox.addEventListener(
+      "change",
+      async () => {
+        const userId =
+          checkbox.dataset.user;
 
-      if (userId !== activeUser) {
-        checkbox.checked = !checked;
+        const checkName =
+          checkbox.dataset.check;
 
-        showToast(
-          "Yalnızca kendi kayıtlarını değiştirebilirsin."
-        );
+        const checked =
+          checkbox.checked;
 
-        return;
+        if (userId !== activeUser) {
+          checkbox.checked =
+            !checked;
+
+          showToast(
+            "Yalnızca kendi kayıtlarını değiştirebilirsin."
+          );
+
+          return;
+        }
+
+        checkbox.disabled = true;
+
+        try {
+          await updateDailyCheck(
+            userId,
+            checkName,
+            checked
+          );
+
+          updateUserProgress(
+            userId
+          );
+
+          calculateMonthlyStatistics();
+          calculateSharedStreak();
+          updateGarden();
+          updateBadges();
+          renderCalendar();
+
+          showToast(
+            checked
+              ? `${FIELD_LABELS[checkName]} kaydedildi. 🌿`
+              : `${FIELD_LABELS[checkName]} işareti kaldırıldı.`
+          );
+        } catch (error) {
+          console.error(
+            "Supabase günlük kayıt hatası:",
+            error
+          );
+
+          checkbox.checked =
+            !checked;
+
+          showToast(
+            `Kayıt yapılamadı: ${
+              error.message ||
+              "Bilinmeyen hata"
+            }`
+          );
+        } finally {
+          updateEditableAreas();
+        }
       }
-
-      checkbox.disabled = true;
-
-      try {
-        await updateDailyCheck(
-          userId,
-          checkName,
-          checked
-        );
-
-        updateUserProgress(userId);
-        calculateMonthlyStatistics();
-        calculateSharedStreak();
-        updateGarden();
-        updateBadges();
-        renderCalendar();
-
-        showToast(
-          checked
-            ? `${FIELD_LABELS[checkName]} kaydedildi. 🌿`
-            : `${FIELD_LABELS[checkName]} işareti kaldırıldı.`
-        );
-      } catch (error) {
-        console.error(
-          "Supabase günlük kayıt hatası:",
-          error
-        );
-
-        checkbox.checked = !checked;
-
-        showToast(
-          `Kayıt yapılamadı: ${
-            error.message || "Bilinmeyen hata"
-          }`
-        );
-      } finally {
-        updateEditableAreas();
-      }
-    });
+    );
   });
 }
 
 function bindDailyContentEvents() {
-  const markEsmaButton = document.getElementById(
-    "markEsmaCompleteButton"
-  );
-
-  const markChallengeButton = document.getElementById(
-    "markChallengeCompleteButton"
-  );
-
-  const dailyPrayerAmenButton = document.getElementById(
-    "dailyPrayerAmenButton"
-  );
-
-  markEsmaButton?.addEventListener("click", () => {
-    toggleDailyContentAction(
-      "esma",
-      markEsmaButton,
-      "Esma kaydedildi."
+  const markEsmaButton =
+    document.getElementById(
+      "markEsmaCompleteButton"
     );
 
-    synchronizeCheckboxWithContent("asma");
-  });
-
-  markChallengeButton?.addEventListener("click", () => {
-    toggleDailyContentAction(
-      "challenge",
-      markChallengeButton,
-      "Bugünün güzel adımı kaydedildi."
+  const markChallengeButton =
+    document.getElementById(
+      "markChallengeCompleteButton"
     );
-  });
 
-  dailyPrayerAmenButton?.addEventListener("click", () => {
-    toggleDailyContentAction(
-      "dailyPrayerAmen",
-      dailyPrayerAmenButton,
-      "Âmin. 🤍"
+  const dailyPrayerAmenButton =
+    document.getElementById(
+      "dailyPrayerAmenButton"
     );
-  });
+
+  markEsmaButton?.addEventListener(
+    "click",
+    async () => {
+      const newValue =
+        await toggleDailyContentAction(
+          "esma",
+          markEsmaButton,
+          "Esma kaydedildi."
+        );
+
+      await synchronizeCheckboxWithContent(
+        "asma",
+        newValue
+      );
+    }
+  );
+
+  markChallengeButton?.addEventListener(
+    "click",
+    async () => {
+      await toggleDailyContentAction(
+        "challenge",
+        markChallengeButton,
+        "Bugünün güzel adımı kaydedildi."
+      );
+    }
+  );
+
+  dailyPrayerAmenButton?.addEventListener(
+    "click",
+    async () => {
+      await toggleDailyContentAction(
+        "dailyPrayerAmen",
+        dailyPrayerAmenButton,
+        "Âmin. 🤍"
+      );
+    }
+  );
 }
 
 function bindMutualPrayerEvents() {
-  const mutualPrayerButtons = document.querySelectorAll(
-    "[data-prayer-from][data-prayer-to]"
+  const mutualPrayerButtons =
+    document.querySelectorAll(
+      "[data-prayer-from][data-prayer-to]"
+    );
+
+  mutualPrayerButtons.forEach(
+    button => {
+      button.addEventListener(
+        "click",
+        async () => {
+          const fromUser =
+            button.dataset.prayerFrom;
+
+          const toUser =
+            button.dataset.prayerTo;
+
+          if (
+            fromUser !== activeUser
+          ) {
+            showToast(
+              "Bu dua butonu diğer kullanıcıya ait."
+            );
+
+            return;
+          }
+
+          button.disabled = true;
+
+          await saveMutualPrayer(
+            fromUser,
+            toUser
+          );
+
+          updateEditableAreas();
+        }
+      );
+    }
   );
-
-  mutualPrayerButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      const fromUser = button.dataset.prayerFrom;
-      const toUser = button.dataset.prayerTo;
-
-      if (fromUser !== activeUser) {
-        showToast("Bu dua butonu diğer kullanıcıya ait.");
-        return;
-      }
-
-      saveMutualPrayer(fromUser, toUser);
-    });
-  });
 }
 
 function bindSharedPrayerEvents() {
   const sharedPrayerForm =
-    document.getElementById("sharedPrayerForm");
+    document.getElementById(
+      "sharedPrayerForm"
+    );
 
   const sharedPrayerInput =
-    document.getElementById("sharedPrayerInput");
+    document.getElementById(
+      "sharedPrayerInput"
+    );
 
   const prayerCharacterCount =
-    document.getElementById("prayerCharacterCount");
+    document.getElementById(
+      "prayerCharacterCount"
+    );
 
-  sharedPrayerInput?.addEventListener("input", () => {
-    if (prayerCharacterCount) {
-      prayerCharacterCount.textContent =
-        sharedPrayerInput.value.length.toString();
+  sharedPrayerInput?.addEventListener(
+    "input",
+    () => {
+      if (
+        prayerCharacterCount
+      ) {
+        prayerCharacterCount.textContent =
+          sharedPrayerInput.value
+            .length
+            .toString();
+      }
     }
-  });
+  );
 
-  sharedPrayerForm?.addEventListener("submit", event => {
-    event.preventDefault();
+  sharedPrayerForm?.addEventListener(
+    "submit",
+    async event => {
+      event.preventDefault();
 
-    const prayerText =
-      sharedPrayerInput?.value.trim();
+      const prayerText =
+        sharedPrayerInput?.value.trim();
 
-    if (!prayerText) {
-      showToast(
-        "Önce paylaşmak istediğin duayı yaz."
-      );
+      if (!prayerText) {
+        showToast(
+          "Önce paylaşmak istediğin duayı yaz."
+        );
 
-      sharedPrayerInput?.focus();
-      return;
+        sharedPrayerInput?.focus();
+        return;
+      }
+
+      const submitButton =
+        sharedPrayerForm.querySelector(
+          'button[type="submit"]'
+        );
+
+      if (submitButton) {
+        submitButton.disabled = true;
+      }
+
+      const saved =
+        await saveSharedPrayer(
+          prayerText
+        );
+
+      if (saved) {
+        sharedPrayerInput.value =
+          "";
+
+        if (
+          prayerCharacterCount
+        ) {
+          prayerCharacterCount.textContent =
+            "0";
+        }
+      }
+
+      if (submitButton) {
+        submitButton.disabled = false;
+      }
     }
-
-    saveSharedPrayer(prayerText);
-
-    sharedPrayerInput.value = "";
-
-    if (prayerCharacterCount) {
-      prayerCharacterCount.textContent = "0";
-    }
-  });
+  );
 }
 
 function bindDailyNoteEvents() {
   const saveDailyNoteButton =
-    document.getElementById("saveDailyNoteButton");
+    document.getElementById(
+      "saveDailyNoteButton"
+    );
 
   saveDailyNoteButton?.addEventListener(
     "click",
@@ -485,67 +612,99 @@ function bindDailyNoteEvents() {
 
 function bindCalendarEvents() {
   const previousMonthButton =
-    document.getElementById("previousMonthButton");
+    document.getElementById(
+      "previousMonthButton"
+    );
 
   const nextMonthButton =
-    document.getElementById("nextMonthButton");
+    document.getElementById(
+      "nextMonthButton"
+    );
 
   const openCalendarButton =
-    document.getElementById("openCalendarButton");
-
-  previousMonthButton?.addEventListener("click", () => {
-    calendarDate.setMonth(
-      calendarDate.getMonth() - 1
+    document.getElementById(
+      "openCalendarButton"
     );
 
-    renderCalendar();
-  });
+  previousMonthButton?.addEventListener(
+    "click",
+    () => {
+      calendarDate.setMonth(
+        calendarDate.getMonth() - 1
+      );
 
-  nextMonthButton?.addEventListener("click", () => {
-    calendarDate.setMonth(
-      calendarDate.getMonth() + 1
-    );
+      renderCalendar();
+    }
+  );
 
-    renderCalendar();
-  });
+  nextMonthButton?.addEventListener(
+    "click",
+    () => {
+      calendarDate.setMonth(
+        calendarDate.getMonth() + 1
+      );
 
-  openCalendarButton?.addEventListener("click", () => {
-    document
-      .getElementById("calendarSection")
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-  });
+      renderCalendar();
+    }
+  );
+
+  openCalendarButton?.addEventListener(
+    "click",
+    () => {
+      document
+        .getElementById(
+          "calendarSection"
+        )
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+    }
+  );
 }
 
 function bindModalEvents() {
   const dayDetailModal =
-    document.getElementById("dayDetailModal");
+    document.getElementById(
+      "dayDetailModal"
+    );
 
   const closeDayDetailButton =
-    document.getElementById("closeDayDetailButton");
+    document.getElementById(
+      "closeDayDetailButton"
+    );
 
   closeDayDetailButton?.addEventListener(
     "click",
     closeDayDetailModal
   );
 
-  dayDetailModal?.addEventListener("click", event => {
-    if (event.target === dayDetailModal) {
-      closeDayDetailModal();
+  dayDetailModal?.addEventListener(
+    "click",
+    event => {
+      if (
+        event.target ===
+        dayDetailModal
+      ) {
+        closeDayDetailModal();
+      }
     }
-  });
+  );
 
-  document.addEventListener("keydown", event => {
-    if (
-      event.key === "Escape" &&
-      dayDetailModal &&
-      !dayDetailModal.classList.contains("hidden")
-    ) {
-      closeDayDetailModal();
+  document.addEventListener(
+    "keydown",
+    event => {
+      if (
+        event.key === "Escape" &&
+        dayDetailModal &&
+        !dayDetailModal.classList.contains(
+          "hidden"
+        )
+      ) {
+        closeDayDetailModal();
+      }
     }
-  });
+  );
 }
 
 /* =========================================================
@@ -554,21 +713,28 @@ function bindModalEvents() {
 
 function renderCurrentDate() {
   const currentDateElement =
-    document.getElementById("currentDate");
+    document.getElementById(
+      "currentDate"
+    );
 
   const currentHijriDateElement =
-    document.getElementById("currentHijriDate");
+    document.getElementById(
+      "currentHijriDate"
+    );
 
   const today = new Date();
 
   if (currentDateElement) {
     currentDateElement.textContent =
-      new Intl.DateTimeFormat("tr-TR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric"
-      }).format(today);
+      new Intl.DateTimeFormat(
+        "tr-TR",
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      ).format(today);
   }
 
   if (currentHijriDateElement) {
@@ -594,46 +760,68 @@ function renderCurrentDate() {
 
 function renderCurrentYear() {
   const currentYearElement =
-    document.getElementById("currentYear");
+    document.getElementById(
+      "currentYear"
+    );
 
   if (currentYearElement) {
     currentYearElement.textContent =
-      new Date().getFullYear().toString();
+      new Date()
+        .getFullYear()
+        .toString();
   }
 }
 
 function getTodayKey() {
-  return formatDateKey(new Date());
+  return formatDateKey(
+    new Date()
+  );
 }
 
 function formatDateKey(date) {
-  const year = date.getFullYear();
+  const year =
+    date.getFullYear();
 
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
 
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
 function parseDateKey(dateKey) {
   const [year, month, day] =
-    dateKey.split("-").map(Number);
+    dateKey
+      .split("-")
+      .map(Number);
 
-  return new Date(year, month - 1, day);
+  return new Date(
+    year,
+    month - 1,
+    day
+  );
 }
 
-function formatReadableDate(dateKey) {
-  return new Intl.DateTimeFormat("tr-TR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  }).format(parseDateKey(dateKey));
+function formatReadableDate(
+  dateKey
+) {
+  return new Intl.DateTimeFormat(
+    "tr-TR",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }
+  ).format(
+    parseDateKey(dateKey)
+  );
 }
 /* =========================================================
    GÜNLÜK İÇERİK
@@ -641,19 +829,31 @@ function formatReadableDate(dateKey) {
 
 function renderDailyContent() {
   const today = new Date();
-  const dayNumber = getDayNumberOfYear(today);
+
+  const dayNumber =
+    getDayNumberOfYear(today);
 
   const content =
     DAILY_CONTENT[
-      dayNumber % DAILY_CONTENT.length
+      dayNumber %
+        DAILY_CONTENT.length
     ];
 
-  setText("dailyEsmaName", content.esma.name);
-  setText("dailyEsmaArabic", content.esma.arabic);
+  setText(
+    "dailyEsmaName",
+    content.esma.name
+  );
+
+  setText(
+    "dailyEsmaArabic",
+    content.esma.arabic
+  );
+
   setText(
     "dailyEsmaMeaning",
     content.esma.meaning
   );
+
   setText(
     "dailyEsmaCount",
     content.esma.count
@@ -697,7 +897,11 @@ function renderDailyContent() {
 
 function getDayNumberOfYear(date) {
   const startOfYear =
-    new Date(date.getFullYear(), 0, 0);
+    new Date(
+      date.getFullYear(),
+      0,
+      0
+    );
 
   const difference =
     date - startOfYear;
@@ -710,80 +914,209 @@ function getDayNumberOfYear(date) {
   );
 }
 
-function getDailyContentActions() {
-  return getStorageObject(
-    STORAGE_KEYS.dailyContentActions,
-    {}
-  );
+async function loadDailyContentActions() {
+  const { data, error } =
+    await window.niyetSupabase
+      .from("daily_actions")
+      .select(
+        "user_id, action_date, action_key, completed"
+      );
+
+  if (error) {
+    throw error;
+  }
+
+  dailyActionsCache = {};
+
+  (data || []).forEach(row => {
+    const username =
+      usernameByProfileId[
+        row.user_id
+      ];
+
+    if (!username) {
+      return;
+    }
+
+    if (
+      !dailyActionsCache[
+        row.action_date
+      ]
+    ) {
+      dailyActionsCache[
+        row.action_date
+      ] = {};
+    }
+
+    if (
+      !dailyActionsCache[
+        row.action_date
+      ][username]
+    ) {
+      dailyActionsCache[
+        row.action_date
+      ][username] = {};
+    }
+
+    dailyActionsCache[
+      row.action_date
+    ][username][
+      row.action_key
+    ] = Boolean(
+      row.completed
+    );
+  });
+
+  renderDailyContentActions();
 }
 
-function loadDailyContentActions() {
-  const actions =
-    getDailyContentActions();
-
+function renderDailyContentActions() {
   const todayActions =
-    actions[getTodayKey()]?.[activeUser] || {};
+    dailyActionsCache[
+      getTodayKey()
+    ]?.[activeUser] || {};
 
   updateContentActionButton(
     "markEsmaCompleteButton",
-    Boolean(todayActions.esma),
+    Boolean(
+      todayActions.esma
+    ),
     "Okudum",
     "Okundu"
   );
 
   updateContentActionButton(
     "markChallengeCompleteButton",
-    Boolean(todayActions.challenge),
+    Boolean(
+      todayActions.challenge
+    ),
     "Yaptım",
     "Tamamlandı"
   );
 
   updateContentActionButton(
     "dailyPrayerAmenButton",
-    Boolean(todayActions.dailyPrayerAmen),
+    Boolean(
+      todayActions.dailyPrayerAmen
+    ),
     "Âmin",
     "Âmin dedin"
   );
 }
 
-function toggleDailyContentAction(
+async function toggleDailyContentAction(
   actionName,
   button,
   message
 ) {
-  const allActions =
-    getDailyContentActions();
+  const profileId =
+    profileIds[activeUser];
+
+  if (!profileId) {
+    showToast(
+      "Aktif kullanıcı profili bulunamadı."
+    );
+
+    return false;
+  }
 
   const todayKey =
     getTodayKey();
 
-  if (!allActions[todayKey]) {
-    allActions[todayKey] = {};
-  }
+  const currentValue =
+    Boolean(
+      dailyActionsCache[
+        todayKey
+      ]?.[activeUser]?.[
+        actionName
+      ]
+    );
 
-  if (!allActions[todayKey][activeUser]) {
-    allActions[todayKey][activeUser] = {};
-  }
-
-  const currentValue = Boolean(
-    allActions[todayKey][activeUser][actionName]
-  );
-
-  allActions[todayKey][activeUser][actionName] =
+  const newValue =
     !currentValue;
 
-  setStorageObject(
-    STORAGE_KEYS.dailyContentActions,
-    allActions
-  );
+  button.disabled = true;
 
-  loadDailyContentActions();
+  try {
+    const { error } =
+      await window.niyetSupabase
+        .from("daily_actions")
+        .upsert(
+          {
+            user_id:
+              profileId,
 
-  showToast(
-    currentValue
-      ? "İşaret kaldırıldı."
-      : message
-  );
+            action_date:
+              todayKey,
+
+            action_key:
+              actionName,
+
+            completed:
+              newValue
+          },
+          {
+            onConflict:
+              "user_id,action_date,action_key"
+          }
+        );
+
+    if (error) {
+      throw error;
+    }
+
+    if (
+      !dailyActionsCache[
+        todayKey
+      ]
+    ) {
+      dailyActionsCache[
+        todayKey
+      ] = {};
+    }
+
+    if (
+      !dailyActionsCache[
+        todayKey
+      ][activeUser]
+    ) {
+      dailyActionsCache[
+        todayKey
+      ][activeUser] = {};
+    }
+
+    dailyActionsCache[
+      todayKey
+    ][activeUser][
+      actionName
+    ] = newValue;
+
+    renderDailyContentActions();
+
+    showToast(
+      newValue
+        ? message
+        : "İşaret kaldırıldı."
+    );
+
+    return newValue;
+  } catch (error) {
+    console.error(
+      "Günlük içerik kaydedilemedi:",
+      error
+    );
+
+    showToast(
+      `Kayıt yapılamadı: ${
+        error.message ||
+        "Bilinmeyen hata"
+      }`
+    );
+
+    return currentValue;
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function updateContentActionButton(
@@ -793,7 +1126,9 @@ function updateContentActionButton(
   completedText
 ) {
   const button =
-    document.getElementById(buttonId);
+    document.getElementById(
+      buttonId
+    );
 
   if (!button) {
     return;
@@ -805,25 +1140,28 @@ function updateContentActionButton(
   );
 
   const icon =
-    buttonId === "dailyPrayerAmenButton"
+    buttonId ===
+    "dailyPrayerAmenButton"
       ? "🤍"
       : "✓";
 
   button.innerHTML = `
-    <span aria-hidden="true">${icon}</span>
-    ${completed ? completedText : defaultText}
+    <span aria-hidden="true">
+      ${icon}
+    </span>
+
+    ${
+      completed
+        ? completedText
+        : defaultText
+    }
   `;
 }
 
-function synchronizeCheckboxWithContent(
-  checkName
+async function synchronizeCheckboxWithContent(
+  checkName,
+  newValue
 ) {
-  const actions =
-    getDailyContentActions();
-
-  const todayActions =
-    actions[getTodayKey()]?.[activeUser] || {};
-
   const checkbox =
     document.querySelector(
       `input[data-user="${activeUser}"][data-check="${checkName}"]`
@@ -833,23 +1171,46 @@ function synchronizeCheckboxWithContent(
     return;
   }
 
-  const newValue =
-    Boolean(todayActions.esma);
+  const oldValue =
+    checkbox.checked;
 
-  checkbox.checked = newValue;
+  checkbox.checked =
+    newValue;
 
-  updateDailyCheck(
-    activeUser,
-    checkName,
-    newValue
-  );
+  checkbox.disabled =
+    true;
 
-  updateAllProgress();
-  calculateMonthlyStatistics();
-  calculateSharedStreak();
-  updateGarden();
-  updateBadges();
-  renderCalendar();
+  try {
+    await updateDailyCheck(
+      activeUser,
+      checkName,
+      newValue
+    );
+
+    updateAllProgress();
+    calculateMonthlyStatistics();
+    calculateSharedStreak();
+    updateGarden();
+    updateBadges();
+    renderCalendar();
+  } catch (error) {
+    checkbox.checked =
+      oldValue;
+
+    console.error(
+      "Esma kutusu güncellenemedi:",
+      error
+    );
+
+    showToast(
+      `Esma kaydı yapılamadı: ${
+        error.message ||
+        "Bilinmeyen hata"
+      }`
+    );
+  } finally {
+    updateEditableAreas();
+  }
 }
 
 /* =========================================================
@@ -869,12 +1230,17 @@ function getStoredActiveUser() {
 
 function setActiveUser(userId) {
   const authenticatedUsername =
-    window.niyetAuthenticatedUser?.username;
+    window
+      .niyetAuthenticatedUser
+      ?.username;
 
   if (
     !authenticatedUsername ||
-    userId !== authenticatedUsername ||
-    !USERS[authenticatedUsername]
+    !USERS[
+      authenticatedUsername
+    ] ||
+    userId !==
+      authenticatedUsername
   ) {
     return;
   }
@@ -891,9 +1257,6 @@ function setActiveUser(userId) {
   updateProfileMenu();
   updateUserCards();
   updateEditableAreas();
-  loadDailyContentActions();
-  loadDailyNote();
-  loadMutualPrayers();
 }
 
 function updateHeaderUser() {
@@ -931,24 +1294,29 @@ function updateProfileMenu() {
       "[data-user-switch]"
     );
 
-  profileItems.forEach(item => {
-    const userId =
-      item.dataset.userSwitch;
+  profileItems.forEach(
+    item => {
+      const userId =
+        item.dataset.userSwitch;
 
-    const isActive =
-      userId === activeUser;
+      const isActive =
+        userId === activeUser;
 
-    item.classList.toggle(
-      "active",
-      isActive
-    );
+      item.classList.toggle(
+        "active",
+        isActive
+      );
 
-    item.hidden = !isActive;
-  });
+      item.hidden =
+        !isActive;
+    }
+  );
 }
 
 function updateUserCards() {
-  Object.keys(USERS).forEach(userId => {
+  Object.keys(
+    USERS
+  ).forEach(userId => {
     const card =
       document.querySelector(
         `[data-user-card="${userId}"]`
@@ -985,33 +1353,91 @@ function updateEditableAreas() {
       'input[type="checkbox"][data-user]'
     );
 
-  checkboxes.forEach(checkbox => {
-    checkbox.disabled =
-      checkbox.dataset.user !== activeUser;
-  });
+  checkboxes.forEach(
+    checkbox => {
+      checkbox.disabled =
+        checkbox.dataset.user !==
+        activeUser;
+    }
+  );
 
   const prayerButtons =
     document.querySelectorAll(
       "[data-prayer-from]"
     );
 
-  prayerButtons.forEach(button => {
-    const fromUser =
-      button.dataset.prayerFrom;
+  prayerButtons.forEach(
+    button => {
+      const fromUser =
+        button.dataset.prayerFrom;
 
-    const prayerAlreadyCompleted =
-      getMutualPrayerStatus(fromUser);
+      const completed =
+        getMutualPrayerStatus(
+          fromUser
+        );
 
-    button.disabled =
-      fromUser !== activeUser ||
-      prayerAlreadyCompleted;
-  });
+      button.disabled =
+        fromUser !== activeUser ||
+        completed;
+    }
+  );
+}
+
+/* =========================================================
+   PROFİLLER
+========================================================= */
+
+async function loadProfileIds() {
+  const { data, error } =
+    await window.niyetSupabase
+      .from("profiles")
+      .select(
+        "id, username"
+      );
+
+  if (error) {
+    throw error;
+  }
+
+  profileIds = {};
+  usernameByProfileId = {};
+
+  (data || []).forEach(
+    profile => {
+      const username =
+        String(
+          profile.username
+        ).toLowerCase();
+
+      if (
+        !USERS[username]
+      ) {
+        return;
+      }
+
+      profileIds[
+        username
+      ] = profile.id;
+
+      usernameByProfileId[
+        profile.id
+      ] = username;
+    }
+  );
+
+  if (
+    !profileIds[
+      activeUser
+    ]
+  ) {
+    throw new Error(
+      `${activeUser} profili bulunamadı.`
+    );
+  }
 }
 
 /* =========================================================
    GÜNLÜK KAYITLAR
-/* =========================================================
-   GÜNLÜK KAYITLAR - SUPABASE
 ========================================================= */
 
 function getDailyRecords() {
@@ -1022,43 +1448,11 @@ function createEmptyDailyRecord() {
   return CHECK_FIELDS.reduce(
     (record, field) => {
       record[field] = false;
+
       return record;
     },
     {}
   );
-}
-
-async function loadProfileIds() {
-  const { data, error } =
-    await window.niyetSupabase
-      .from("profiles")
-      .select("id, username");
-
-  if (error) {
-    throw error;
-  }
-
-  profileIds = {};
-
-  (data || []).forEach(profile => {
-    const username =
-      String(profile.username).toLowerCase();
-
-    if (USERS[username]) {
-      profileIds[username] = profile.id;
-    }
-  });
-
-  console.log(
-    "Supabase profil eşleşmeleri:",
-    profileIds
-  );
-
-  if (!profileIds[activeUser]) {
-    throw new Error(
-      `${activeUser} profili profiles tablosunda bulunamadı.`
-    );
-  }
 }
 
 async function loadDailyRecords() {
@@ -1068,74 +1462,97 @@ async function loadDailyRecords() {
       .select(
         "user_id, check_date, item_key, completed"
       )
-      .order("check_date", {
-        ascending: true
-      });
+      .order(
+        "check_date",
+        {
+          ascending: true
+        }
+      );
 
   if (error) {
     throw error;
   }
 
-  const usernameByProfileId = {};
-
-  Object.entries(profileIds).forEach(
-    ([username, profileId]) => {
-      usernameByProfileId[profileId] =
-        username;
-    }
-  );
-
   dailyRecordsCache = {};
 
-  (data || []).forEach(row => {
-    const username =
-      usernameByProfileId[row.user_id];
+  (data || []).forEach(
+    row => {
+      const username =
+        usernameByProfileId[
+          row.user_id
+        ];
 
-    if (
-      !username ||
-      !CHECK_FIELDS.includes(row.item_key)
-    ) {
-      return;
+      if (
+        !username ||
+        !CHECK_FIELDS.includes(
+          row.item_key
+        )
+      ) {
+        return;
+      }
+
+      if (
+        !dailyRecordsCache[
+          row.check_date
+        ]
+      ) {
+        dailyRecordsCache[
+          row.check_date
+        ] = {};
+      }
+
+      if (
+        !dailyRecordsCache[
+          row.check_date
+        ][username]
+      ) {
+        dailyRecordsCache[
+          row.check_date
+        ][username] =
+          createEmptyDailyRecord();
+      }
+
+      dailyRecordsCache[
+        row.check_date
+      ][username][
+        row.item_key
+      ] = Boolean(
+        row.completed
+      );
     }
-
-    if (!dailyRecordsCache[row.check_date]) {
-      dailyRecordsCache[row.check_date] = {};
-    }
-
-    if (
-      !dailyRecordsCache[row.check_date][username]
-    ) {
-      dailyRecordsCache[row.check_date][username] =
-        createEmptyDailyRecord();
-    }
-
-    dailyRecordsCache[row.check_date][username][
-      row.item_key
-    ] = Boolean(row.completed);
-  });
+  );
 
   renderDailyRecordCheckboxes();
 }
 
 function renderDailyRecordCheckboxes() {
-  const todayKey = getTodayKey();
+  const todayKey =
+    getTodayKey();
 
-  Object.keys(USERS).forEach(userId => {
+  Object.keys(
+    USERS
+  ).forEach(userId => {
     const record =
-      dailyRecordsCache[todayKey]?.[userId] ||
+      dailyRecordsCache[
+        todayKey
+      ]?.[userId] ||
       createEmptyDailyRecord();
 
-    CHECK_FIELDS.forEach(field => {
-      const checkbox =
-        document.querySelector(
-          `input[data-user="${userId}"][data-check="${field}"]`
-        );
+    CHECK_FIELDS.forEach(
+      field => {
+        const checkbox =
+          document.querySelector(
+            `input[data-user="${userId}"][data-check="${field}"]`
+          );
 
-      if (checkbox) {
-        checkbox.checked =
-          Boolean(record[field]);
+        if (checkbox) {
+          checkbox.checked =
+            Boolean(
+              record[field]
+            );
+        }
       }
-    });
+    );
   });
 
   updateEditableAreas();
@@ -1146,13 +1563,19 @@ async function updateDailyCheck(
   checkName,
   checked
 ) {
-  if (userId !== activeUser) {
+  if (
+    userId !== activeUser
+  ) {
     throw new Error(
       "Başka kullanıcının kaydı değiştirilemez."
     );
   }
 
-  if (!CHECK_FIELDS.includes(checkName)) {
+  if (
+    !CHECK_FIELDS.includes(
+      checkName
+    )
+  ) {
     throw new Error(
       "Geçersiz takip alanı."
     );
@@ -1170,64 +1593,85 @@ async function updateDailyCheck(
   const todayKey =
     getTodayKey();
 
-  const payload = {
-    user_id: profileId,
-    check_date: todayKey,
-    item_key: checkName,
-    item_label: FIELD_LABELS[checkName],
-    completed: Boolean(checked)
-  };
-
-  console.log(
-    "Supabase'e gönderilen kayıt:",
-    payload
-  );
-
-  const { data, error } =
+  const { error } =
     await window.niyetSupabase
       .from("daily_checks")
-      .upsert(payload, {
-        onConflict:
-          "user_id,check_date,item_key"
-      })
-      .select();
+      .upsert(
+        {
+          user_id:
+            profileId,
+
+          check_date:
+            todayKey,
+
+          item_key:
+            checkName,
+
+          item_label:
+            FIELD_LABELS[
+              checkName
+            ],
+
+          completed:
+            Boolean(checked)
+        },
+        {
+          onConflict:
+            "user_id,check_date,item_key"
+        }
+      );
 
   if (error) {
     throw error;
   }
 
-  console.log(
-    "Supabase kayıt sonucu:",
-    data
-  );
-
-  if (!dailyRecordsCache[todayKey]) {
-    dailyRecordsCache[todayKey] = {};
+  if (
+    !dailyRecordsCache[
+      todayKey
+    ]
+  ) {
+    dailyRecordsCache[
+      todayKey
+    ] = {};
   }
 
-  if (!dailyRecordsCache[todayKey][userId]) {
-    dailyRecordsCache[todayKey][userId] =
+  if (
+    !dailyRecordsCache[
+      todayKey
+    ][userId]
+  ) {
+    dailyRecordsCache[
+      todayKey
+    ][userId] =
       createEmptyDailyRecord();
   }
 
-  dailyRecordsCache[todayKey][userId][checkName] =
-    Boolean(checked);
+  dailyRecordsCache[
+    todayKey
+  ][userId][
+    checkName
+  ] = Boolean(checked);
 }
 
 function updateAllProgress() {
-  Object.keys(USERS).forEach(
+  Object.keys(
+    USERS
+  ).forEach(
     updateUserProgress
   );
 }
 
 function updateUserProgress(userId) {
   const todayRecord =
-    dailyRecordsCache[getTodayKey()]?.[userId] ||
+    dailyRecordsCache[
+      getTodayKey()
+    ]?.[userId] ||
     createEmptyDailyRecord();
 
   const completedCount =
     CHECK_FIELDS.filter(
-      field => todayRecord[field]
+      field =>
+        todayRecord[field]
     ).length;
 
   const percentage =
@@ -1252,10 +1696,12 @@ function updateUserProgress(userId) {
     progressFill.style.width =
       `${percentage}%`;
 
-    progressFill.parentElement?.setAttribute(
-      "aria-valuenow",
-      percentage.toString()
-    );
+    progressFill
+      .parentElement
+      ?.setAttribute(
+        "aria-valuenow",
+        percentage.toString()
+      );
   }
 }
 /* =========================================================
@@ -1263,61 +1709,190 @@ function updateUserProgress(userId) {
 ========================================================= */
 
 function getMutualPrayers() {
-  return getStorageObject(
-    STORAGE_KEYS.mutualPrayers,
-    {}
-  );
+  return mutualPrayersCache;
 }
 
-function getMutualPrayerStatus(userId) {
-  const prayers =
-    getMutualPrayers();
-
+function getMutualPrayerStatus(
+  userId
+) {
   return Boolean(
-    prayers[getTodayKey()]?.[userId]
+    mutualPrayersCache[
+      getTodayKey()
+    ]?.[userId]
   );
 }
 
-function saveMutualPrayer(
+async function loadMutualPrayers() {
+  const { data, error } =
+    await window.niyetSupabase
+      .from("mutual_prayers")
+      .select(
+        "id, from_user_id, to_user_id, prayer_date, created_at"
+      );
+
+  if (error) {
+    throw error;
+  }
+
+  mutualPrayersCache = {};
+
+  (data || []).forEach(
+    row => {
+      const fromUsername =
+        usernameByProfileId[
+          row.from_user_id
+        ];
+
+      const toUsername =
+        usernameByProfileId[
+          row.to_user_id
+        ];
+
+      if (
+        !fromUsername ||
+        !toUsername
+      ) {
+        return;
+      }
+
+      if (
+        !mutualPrayersCache[
+          row.prayer_date
+        ]
+      ) {
+        mutualPrayersCache[
+          row.prayer_date
+        ] = {};
+      }
+
+      mutualPrayersCache[
+        row.prayer_date
+      ][fromUsername] = {
+        id: row.id,
+        from: fromUsername,
+        to: toUsername,
+        createdAt:
+          row.created_at
+      };
+    }
+  );
+
+  renderMutualPrayers();
+}
+
+async function saveMutualPrayer(
   fromUser,
   toUser
 ) {
-  const prayers =
-    getMutualPrayers();
+  if (
+    fromUser !== activeUser
+  ) {
+    showToast(
+      "Başka kullanıcı adına dua kaydedemezsin."
+    );
+
+    return;
+  }
+
+  const fromProfileId =
+    profileIds[fromUser];
+
+  const toProfileId =
+    profileIds[toUser];
+
+  if (
+    !fromProfileId ||
+    !toProfileId
+  ) {
+    showToast(
+      "Kullanıcı profilleri bulunamadı."
+    );
+
+    return;
+  }
 
   const todayKey =
     getTodayKey();
 
-  if (!prayers[todayKey]) {
-    prayers[todayKey] = {};
+  try {
+    const { data, error } =
+      await window.niyetSupabase
+        .from("mutual_prayers")
+        .upsert(
+          {
+            from_user_id:
+              fromProfileId,
+
+            to_user_id:
+              toProfileId,
+
+            prayer_date:
+              todayKey
+          },
+          {
+            onConflict:
+              "from_user_id,to_user_id,prayer_date"
+          }
+        )
+        .select()
+        .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (
+      !mutualPrayersCache[
+        todayKey
+      ]
+    ) {
+      mutualPrayersCache[
+        todayKey
+      ] = {};
+    }
+
+    mutualPrayersCache[
+      todayKey
+    ][fromUser] = {
+      id: data.id,
+      from: fromUser,
+      to: toUser,
+      createdAt:
+        data.created_at
+    };
+
+    renderMutualPrayers();
+    calculateMonthlyStatistics();
+    updateBadges();
+
+    showToast(
+      `${USERS[toUser].name} için ettiğin dua kaydedildi. 🤍`
+    );
+  } catch (error) {
+    console.error(
+      "Birbirine dua kaydı başarısız:",
+      error
+    );
+
+    showToast(
+      `Dua kaydedilemedi: ${
+        error.message ||
+        "Bilinmeyen hata"
+      }`
+    );
   }
-
-  prayers[todayKey][fromUser] = {
-    from: fromUser,
-    to: toUser,
-    createdAt: new Date().toISOString()
-  };
-
-  setStorageObject(
-    STORAGE_KEYS.mutualPrayers,
-    prayers
-  );
-
-  loadMutualPrayers();
-  calculateMonthlyStatistics();
-  updateBadges();
-
-  showToast(
-    `${USERS[toUser].name} için ettiğin dua kaydedildi. 🤍`
-  );
 }
 
-function loadMutualPrayers() {
+function renderMutualPrayers() {
   const damlaCompleted =
-    getMutualPrayerStatus("damla");
+    getMutualPrayerStatus(
+      "damla"
+    );
 
   const hilalCompleted =
-    getMutualPrayerStatus("hilal");
+    getMutualPrayerStatus(
+      "hilal"
+    );
 
   updateMutualPrayerButton(
     "damla",
@@ -1343,17 +1918,27 @@ function loadMutualPrayers() {
     hilalCompleted
   ) {
     result.innerHTML = `
-      <span class="result-icon" aria-hidden="true">🤍</span>
+      <span
+        class="result-icon"
+        aria-hidden="true"
+      >
+        🤍
+      </span>
 
       <div>
-        <strong>Bugün birbiriniz için dua ettiniz.</strong>
+        <strong>
+          Bugün birbiriniz için dua ettiniz.
+        </strong>
+
         <p>
           Allah dualarınızı kabul, kalplerinizi birbirine yakın eylesin.
         </p>
       </div>
     `;
 
-    result.classList.add("completed");
+    result.classList.add(
+      "completed"
+    );
   } else if (
     damlaCompleted ||
     hilalCompleted
@@ -1364,10 +1949,18 @@ function loadMutualPrayers() {
         : "Hilal";
 
     result.innerHTML = `
-      <span class="result-icon" aria-hidden="true">🌙</span>
+      <span
+        class="result-icon"
+        aria-hidden="true"
+      >
+        🌙
+      </span>
 
       <div>
-        <strong>${completedUser} bugün dua etti.</strong>
+        <strong>
+          ${completedUser} bugün dua etti.
+        </strong>
+
         <p>
           Diğer dua da tamamlandığında ortak mesajınız burada görünecek.
         </p>
@@ -1379,10 +1972,18 @@ function loadMutualPrayers() {
     );
   } else {
     result.innerHTML = `
-      <span class="result-icon" aria-hidden="true">🤍</span>
+      <span
+        class="result-icon"
+        aria-hidden="true"
+      >
+        🤍
+      </span>
 
       <div>
-        <strong>Dualar kalpleri birbirine yaklaştırır.</strong>
+        <strong>
+          Dualar kalpleri birbirine yaklaştırır.
+        </strong>
+
         <p>
           İkiniz de dua ettiğinizde burada ortak mesajınız görünecek.
         </p>
@@ -1416,11 +2017,17 @@ function updateMutualPrayerButton(
   button.innerHTML =
     completed
       ? `
-        <span aria-hidden="true">✓</span>
+        <span aria-hidden="true">
+          ✓
+        </span>
+
         Dua edildi
       `
       : `
-        <span aria-hidden="true">🤲</span>
+        <span aria-hidden="true">
+          🤲
+        </span>
+
         ${USERS[targetUser].name} için dua ettim
       `;
 
@@ -1428,41 +2035,180 @@ function updateMutualPrayerButton(
     userId !== activeUser ||
     completed;
 }
+
 /* =========================================================
    ORTAK DUALAR
 ========================================================= */
 
-function getSharedPrayers() {
-  return getStorageArray(
-    STORAGE_KEYS.sharedPrayers
-  );
+async function loadSharedPrayers() {
+  const prayersResult =
+    await window.niyetSupabase
+      .from("prayers")
+      .select(
+        "id, user_id, title, content, is_shared, created_at"
+      )
+      .eq(
+        "is_shared",
+        true
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  if (
+    prayersResult.error
+  ) {
+    throw prayersResult.error;
+  }
+
+  const amensResult =
+    await window.niyetSupabase
+      .from("prayer_amens")
+      .select(
+        "prayer_id, user_id"
+      );
+
+  if (
+    amensResult.error
+  ) {
+    throw amensResult.error;
+  }
+
+  const amens =
+    amensResult.data || [];
+
+  sharedPrayersCache =
+    (
+      prayersResult.data ||
+      []
+    ).map(prayer => {
+      const author =
+        usernameByProfileId[
+          prayer.user_id
+        ] || "damla";
+
+      const amenBy =
+        amens
+          .filter(
+            amen =>
+              amen.prayer_id ===
+              prayer.id
+          )
+          .map(
+            amen =>
+              usernameByProfileId[
+                amen.user_id
+              ]
+          )
+          .filter(Boolean);
+
+      return {
+        id:
+          String(prayer.id),
+
+        author,
+
+        text:
+          prayer.content,
+
+        title:
+          prayer.title,
+
+        createdAt:
+          prayer.created_at,
+
+        amenBy
+      };
+    });
+
+  renderSharedPrayers();
 }
 
-function saveSharedPrayer(prayerText) {
-  const prayers =
-    getSharedPrayers();
+async function saveSharedPrayer(
+  prayerText
+) {
+  const profileId =
+    profileIds[activeUser];
 
-  prayers.unshift({
-    id: createId(),
-    author: activeUser,
-    text: prayerText,
-    createdAt: new Date().toISOString(),
-    amenBy: []
-  });
+  if (!profileId) {
+    showToast(
+      "Aktif kullanıcı profili bulunamadı."
+    );
 
-  setStorageObject(
-    STORAGE_KEYS.sharedPrayers,
-    prayers
-  );
+    return false;
+  }
 
-  loadSharedPrayers();
+  try {
+    const { data, error } =
+      await window.niyetSupabase
+        .from("prayers")
+        .insert({
+          user_id:
+            profileId,
 
-  showToast(
-    "Duan paylaşıldı. 🤲"
-  );
+          title:
+            "Ortak Dua",
+
+          content:
+            prayerText,
+
+          is_shared:
+            true
+        })
+        .select()
+        .single();
+
+    if (error) {
+      throw error;
+    }
+
+    sharedPrayersCache.unshift({
+      id:
+        String(data.id),
+
+      author:
+        activeUser,
+
+      text:
+        data.content,
+
+      title:
+        data.title,
+
+      createdAt:
+        data.created_at,
+
+      amenBy: []
+    });
+
+    renderSharedPrayers();
+
+    showToast(
+      "Duan paylaşıldı. 🤲"
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      "Ortak dua kaydı başarısız:",
+      error
+    );
+
+    showToast(
+      `Dua paylaşılamadı: ${
+        error.message ||
+        "Bilinmeyen hata"
+      }`
+    );
+
+    return false;
+  }
 }
 
-function loadSharedPrayers() {
+function renderSharedPrayers() {
   const container =
     document.getElementById(
       "sharedPrayersList"
@@ -1472,14 +2218,22 @@ function loadSharedPrayers() {
     return;
   }
 
-  const prayers =
-    getSharedPrayers();
-
-  if (prayers.length === 0) {
+  if (
+    sharedPrayersCache.length ===
+    0
+  ) {
     container.innerHTML = `
-      <article class="shared-prayer-empty">
-        <span aria-hidden="true">🤲</span>
-        <h3>Henüz ortak dua yok</h3>
+      <article
+        class="shared-prayer-empty"
+      >
+        <span aria-hidden="true">
+          🤲
+        </span>
+
+        <h3>
+          Henüz ortak dua yok
+        </h3>
+
         <p>
           İlk duayı yazdığınızda burada birlikte “Âmin” diyebileceksiniz.
         </p>
@@ -1490,10 +2244,9 @@ function loadSharedPrayers() {
   }
 
   container.innerHTML =
-    prayers
+    sharedPrayersCache
       .map(
-        prayer =>
-          createSharedPrayerHtml(prayer)
+        createSharedPrayerHtml
       )
       .join("");
 
@@ -1504,22 +2257,30 @@ function loadSharedPrayers() {
     .forEach(button => {
       button.addEventListener(
         "click",
-        () => {
-          toggleAmen(
-            button.dataset.amenPrayerId
+        async () => {
+          button.disabled =
+            true;
+
+          await toggleAmen(
+            button.dataset
+              .amenPrayerId
           );
         }
       );
     });
 }
 
-function createSharedPrayerHtml(prayer) {
+function createSharedPrayerHtml(
+  prayer
+) {
   const author =
     USERS[prayer.author] ||
     USERS.damla;
 
   const hasSaidAmen =
-    prayer.amenBy.includes(activeUser);
+    prayer.amenBy.includes(
+      activeUser
+    );
 
   const amenCount =
     prayer.amenBy.length;
@@ -1534,14 +2295,22 @@ function createSharedPrayerHtml(prayer) {
         minute: "2-digit"
       }
     ).format(
-      new Date(prayer.createdAt)
+      new Date(
+        prayer.createdAt
+      )
     );
 
   return `
-    <article class="shared-prayer-item">
-      <div class="shared-prayer-item-header">
+    <article
+      class="shared-prayer-item"
+    >
+      <div
+        class="shared-prayer-item-header"
+      >
         <strong>
-          ${escapeHtml(author.name)}
+          ${escapeHtml(
+            author.name
+          )}
         </strong>
 
         <time
@@ -1549,12 +2318,16 @@ function createSharedPrayerHtml(prayer) {
             prayer.createdAt
           )}"
         >
-          ${escapeHtml(formattedDate)}
+          ${escapeHtml(
+            formattedDate
+          )}
         </time>
       </div>
 
       <p>
-        ${escapeHtml(prayer.text)}
+        ${escapeHtml(
+          prayer.text
+        )}
       </p>
 
       <button
@@ -1569,7 +2342,11 @@ function createSharedPrayerHtml(prayer) {
         )}"
       >
         <span aria-hidden="true">
-          ${hasSaidAmen ? "🤍" : "🤲"}
+          ${
+            hasSaidAmen
+              ? "🤍"
+              : "🤲"
+          }
         </span>
 
         ${
@@ -1588,60 +2365,164 @@ function createSharedPrayerHtml(prayer) {
   `;
 }
 
-function toggleAmen(prayerId) {
-  const prayers =
-    getSharedPrayers();
-
+async function toggleAmen(
+  prayerId
+) {
   const prayer =
-    prayers.find(
-      item => item.id === prayerId
+    sharedPrayersCache.find(
+      item =>
+        String(item.id) ===
+        String(prayerId)
     );
 
   if (!prayer) {
     return;
   }
 
-  const userIndex =
-    prayer.amenBy.indexOf(activeUser);
+  const profileId =
+    profileIds[activeUser];
 
-  if (userIndex >= 0) {
-    prayer.amenBy.splice(
-      userIndex,
-      1
+  const hasSaidAmen =
+    prayer.amenBy.includes(
+      activeUser
+    );
+
+  try {
+    if (hasSaidAmen) {
+      const { error } =
+        await window.niyetSupabase
+          .from(
+            "prayer_amens"
+          )
+          .delete()
+          .eq(
+            "prayer_id",
+            Number(prayerId)
+          )
+          .eq(
+            "user_id",
+            profileId
+          );
+
+      if (error) {
+        throw error;
+      }
+
+      prayer.amenBy =
+        prayer.amenBy.filter(
+          username =>
+            username !==
+            activeUser
+        );
+
+      showToast(
+        "Âmin işareti kaldırıldı."
+      );
+    } else {
+      const { error } =
+        await window.niyetSupabase
+          .from(
+            "prayer_amens"
+          )
+          .insert({
+            prayer_id:
+              Number(prayerId),
+
+            user_id:
+              profileId
+          });
+
+      if (error) {
+        throw error;
+      }
+
+      prayer.amenBy.push(
+        activeUser
+      );
+
+      showToast(
+        "Âmin. 🤍"
+      );
+    }
+
+    renderSharedPrayers();
+  } catch (error) {
+    console.error(
+      "Âmin kaydı başarısız:",
+      error
     );
 
     showToast(
-      "Âmin işareti kaldırıldı."
+      `Âmin kaydedilemedi: ${
+        error.message ||
+        "Bilinmeyen hata"
+      }`
     );
-  } else {
-    prayer.amenBy.push(activeUser);
 
-    showToast("Âmin. 🤍");
+    renderSharedPrayers();
   }
-
-  setStorageObject(
-    STORAGE_KEYS.sharedPrayers,
-    prayers
-  );
-
-  loadSharedPrayers();
 }
 
 /* =========================================================
    GÜNLÜK NOT
 ========================================================= */
 
-function getDailyNotes() {
-  return getStorageObject(
-    STORAGE_KEYS.dailyNotes,
-    {}
+async function loadDailyNote() {
+  const { data, error } =
+    await window.niyetSupabase
+      .from("notes")
+      .select(
+        "id, user_id, note_date, content, category, updated_at"
+      )
+      .eq(
+        "category",
+        "günlük"
+      );
+
+  if (error) {
+    throw error;
+  }
+
+  dailyNotesCache = {};
+
+  (data || []).forEach(
+    note => {
+      const username =
+        usernameByProfileId[
+          note.user_id
+        ];
+
+      if (!username) {
+        return;
+      }
+
+      if (
+        !dailyNotesCache[
+          note.note_date
+        ]
+      ) {
+        dailyNotesCache[
+          note.note_date
+        ] = {};
+      }
+
+      dailyNotesCache[
+        note.note_date
+      ][username] = {
+        id: note.id,
+        text:
+          note.content,
+
+        updatedAt:
+          note.updated_at
+      };
+    }
   );
+
+  renderDailyNote();
 }
 
-function loadDailyNote() {
-  const notes =
-    getDailyNotes();
-
+function renderDailyNote() {
   const noteInput =
     document.getElementById(
       "dailyNoteInput"
@@ -1653,8 +2534,10 @@ function loadDailyNote() {
     );
 
   const note =
-    notes[getTodayKey()]?.[activeUser]
-      ?.text || "";
+    dailyNotesCache[
+      getTodayKey()
+    ]?.[activeUser]?.text ||
+    "";
 
   if (noteInput) {
     noteInput.value = note;
@@ -1668,7 +2551,7 @@ function loadDailyNote() {
   }
 }
 
-function saveDailyNote() {
+async function saveDailyNote() {
   const noteInput =
     document.getElementById(
       "dailyNoteInput"
@@ -1679,12 +2562,20 @@ function saveDailyNote() {
       "noteSaveStatus"
     );
 
-  if (!noteInput) {
+  const saveButton =
+    document.getElementById(
+      "saveDailyNoteButton"
+    );
+
+  if (
+    !noteInput ||
+    !saveButton
+  ) {
     return;
   }
 
-  const notes =
-    getDailyNotes();
+  const profileId =
+    profileIds[activeUser];
 
   const todayKey =
     getTodayKey();
@@ -1692,46 +2583,100 @@ function saveDailyNote() {
   const text =
     noteInput.value.trim();
 
-  if (!notes[todayKey]) {
-    notes[todayKey] = {};
-  }
+  saveButton.disabled =
+    true;
 
-  notes[todayKey][activeUser] = {
-    text,
-    updatedAt:
-      new Date().toISOString()
-  };
+  try {
+    const { data, error } =
+      await window.niyetSupabase
+        .from("notes")
+        .upsert(
+          {
+            user_id:
+              profileId,
 
-  setStorageObject(
-    STORAGE_KEYS.dailyNotes,
-    notes
-  );
+            note_date:
+              todayKey,
 
-  if (saveStatus) {
-    saveStatus.textContent =
+            title:
+              "Bugün Kalbimde",
+
+            content:
+              text,
+
+            category:
+              "günlük",
+
+            is_shared:
+              false
+          },
+          {
+            onConflict:
+              "user_id,note_date,category"
+          }
+        )
+        .select()
+        .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (
+      !dailyNotesCache[
+        todayKey
+      ]
+    ) {
+      dailyNotesCache[
+        todayKey
+      ] = {};
+    }
+
+    dailyNotesCache[
+      todayKey
+    ][activeUser] = {
+      id: data.id,
+      text:
+        data.content,
+
+      updatedAt:
+        data.updated_at
+    };
+
+    if (saveStatus) {
+      saveStatus.textContent =
+        text
+          ? "Şimdi kaydedildi"
+          : "Boş not kaydedildi";
+    }
+
+    showToast(
       text
-        ? "Şimdi kaydedildi"
-        : "Boş not kaydedildi";
+        ? "Kalbindeki not kaydedildi."
+        : "Bugünkü not temizlendi."
+    );
+  } catch (error) {
+    console.error(
+      "Not kaydı başarısız:",
+      error
+    );
+
+    showToast(
+      `Not kaydedilemedi: ${
+        error.message ||
+        "Bilinmeyen hata"
+      }`
+    );
+  } finally {
+    saveButton.disabled =
+      false;
   }
-
-  showToast(
-    text
-      ? "Kalbindeki not kaydedildi."
-      : "Bugünkü not temizlendi."
-  );
 }
-
 /* =========================================================
    AYLIK İSTATİSTİKLER
 ========================================================= */
 
 function calculateMonthlyStatistics() {
-  const records =
-    getDailyRecords();
-
-  const mutualPrayers =
-    getMutualPrayers();
-
   const currentDate =
     new Date();
 
@@ -1746,7 +2691,9 @@ function calculateMonthlyStatistics() {
   let esmaCount = 0;
   let duaCount = 0;
 
-  Object.entries(records).forEach(
+  Object.entries(
+    dailyRecordsCache
+  ).forEach(
     ([dateKey, users]) => {
       const date =
         parseDateKey(dateKey);
@@ -1760,35 +2707,38 @@ function calculateMonthlyStatistics() {
         return;
       }
 
-      Object.values(users).forEach(
-        record => {
-          prayerCount += [
-            "fajr",
-            "dhuhr",
-            "asr",
-            "maghrib",
-            "isha"
-          ].filter(
-            field => record[field]
-          ).length;
+      Object.values(
+        users
+      ).forEach(record => {
+        prayerCount += [
+          "fajr",
+          "dhuhr",
+          "asr",
+          "maghrib",
+          "isha"
+        ].filter(
+          field =>
+            record[field]
+        ).length;
 
-          if (record.quran) {
-            quranCount += 1;
-          }
-
-          if (record.asma) {
-            esmaCount += 1;
-          }
-
-          if (record.dua) {
-            duaCount += 1;
-          }
+        if (record.quran) {
+          quranCount += 1;
         }
-      );
+
+        if (record.asma) {
+          esmaCount += 1;
+        }
+
+        if (record.dua) {
+          duaCount += 1;
+        }
+      });
     }
   );
 
-  Object.entries(mutualPrayers).forEach(
+  Object.entries(
+    mutualPrayersCache
+  ).forEach(
     ([dateKey, users]) => {
       const date =
         parseDateKey(dateKey);
@@ -1800,7 +2750,9 @@ function calculateMonthlyStatistics() {
           currentMonth
       ) {
         duaCount +=
-          Object.keys(users).length;
+          Object.keys(
+            users
+          ).length;
       }
     }
   );
@@ -1831,22 +2783,26 @@ function calculateMonthlyStatistics() {
 ========================================================= */
 
 function calculateSharedStreak() {
-  const records =
-    getDailyRecords();
-
   let streak = 0;
 
   const cursor =
     new Date();
 
-  cursor.setHours(0, 0, 0, 0);
+  cursor.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
   while (true) {
     const dateKey =
       formatDateKey(cursor);
 
     const dayRecords =
-      records[dateKey];
+      dailyRecordsCache[
+        dateKey
+      ];
 
     if (!dayRecords) {
       break;
@@ -1893,10 +2849,14 @@ function calculateSharedStreak() {
   if (streak === 0) {
     streakMessage.textContent =
       "Bugün yeniden niyet edebilirsiniz. Her başlangıç kıymetlidir.";
-  } else if (streak < 7) {
+  } else if (
+    streak < 7
+  ) {
     streakMessage.textContent =
       "Küçük adımlarınız birlikte güzel bir alışkanlığa dönüşüyor.";
-  } else if (streak < 30) {
+  } else if (
+    streak < 30
+  ) {
     streakMessage.textContent =
       "Birlikte devam ettiğiniz her gün manevi bahçenizi büyütüyor.";
   } else {
@@ -1907,13 +2867,18 @@ function calculateSharedStreak() {
   return streak;
 }
 
-function hasAnyCompletedCheck(record) {
+function hasAnyCompletedCheck(
+  record
+) {
   if (!record) {
     return false;
   }
 
   return CHECK_FIELDS.some(
-    field => Boolean(record[field])
+    field =>
+      Boolean(
+        record[field]
+      )
   );
 }
 
@@ -1922,21 +2887,18 @@ function hasAnyCompletedCheck(record) {
 ========================================================= */
 
 function getSharedActiveDayCount() {
-  const records =
-    getDailyRecords();
-
-  return Object.values(records).filter(
-    dayRecords => {
-      return (
-        hasAnyCompletedCheck(
-          dayRecords.damla
-        ) &&
-        hasAnyCompletedCheck(
-          dayRecords.hilal
-        )
-      );
-    }
-  ).length;
+  return Object.values(
+    dailyRecordsCache
+  ).filter(dayRecords => {
+    return (
+      hasAnyCompletedCheck(
+        dayRecords.damla
+      ) &&
+      hasAnyCompletedCheck(
+        dayRecords.hilal
+      )
+    );
+  }).length;
 }
 
 function updateGarden() {
@@ -1949,66 +2911,98 @@ function updateGarden() {
   let description =
     "Birlikte devam ettikçe bahçeniz büyüyecek.";
 
-  let visual = "🌱";
-  let progress = 0;
+  let visual =
+    "🌱";
+
+  let progress =
+    0;
 
   let progressText =
     "İlk fideye 7 ortak gün kaldı.";
 
-  if (sharedDays < 7) {
+  if (
+    sharedDays < 7
+  ) {
     progress =
-      (sharedDays / 7) * 100;
+      (
+        sharedDays /
+        7
+      ) * 100;
 
     progressText =
       `İlk fideye ${
         7 - sharedDays
       } ortak gün kaldı.`;
-  } else if (sharedDays < 14) {
+  } else if (
+    sharedDays < 14
+  ) {
     title =
       "Küçük Bir Fide";
 
     description =
       "Niyetleriniz kök salmaya ve güçlenmeye başladı.";
 
-    visual = "🌿";
+    visual =
+      "🌿";
 
     progress =
-      ((sharedDays - 7) / 7) *
-      100;
+      (
+        (
+          sharedDays -
+          7
+        ) /
+        7
+      ) * 100;
 
     progressText =
       `İlk çiçeğe ${
         14 - sharedDays
       } ortak gün kaldı.`;
-  } else if (sharedDays < 30) {
+  } else if (
+    sharedDays < 30
+  ) {
     title =
       "Açan Bir Çiçek";
 
     description =
       "Birlikte gösterdiğiniz istikrar güzelliklere dönüşüyor.";
 
-    visual = "🌷";
+    visual =
+      "🌷";
 
     progress =
-      ((sharedDays - 14) / 16) *
-      100;
+      (
+        (
+          sharedDays -
+          14
+        ) /
+        16
+      ) * 100;
 
     progressText =
       `Ağaca ${
         30 - sharedDays
       } ortak gün kaldı.`;
-  } else if (sharedDays < 60) {
+  } else if (
+    sharedDays < 60
+  ) {
     title =
       "Güçlü Bir Ağaç";
 
     description =
       "Manevi yolculuğunuz artık sağlam dallara sahip.";
 
-    visual = "🌳";
+    visual =
+      "🌳";
 
     progress =
-      ((sharedDays - 30) / 30) *
-      100;
+      (
+        (
+          sharedDays -
+          30
+        ) /
+        30
+      ) * 100;
 
     progressText =
       `Meyve veren ağaca ${
@@ -2021,8 +3015,11 @@ function updateGarden() {
     description =
       "Sabırla sürdürdüğünüz yolculuk güzel meyveler verdi.";
 
-    visual = "🌳";
-    progress = 100;
+    visual =
+      "🌳";
+
+    progress =
+      100;
 
     progressText =
       `${sharedDays} ortak gün biriktirdiniz.`;
@@ -2062,7 +3059,10 @@ function updateGarden() {
     const safeProgress =
       Math.max(
         0,
-        Math.min(progress, 100)
+        Math.min(
+          progress,
+          100
+        )
       );
 
     gardenProgressFill.style.width =
@@ -2084,12 +3084,6 @@ function updateGarden() {
 ========================================================= */
 
 function updateBadges() {
-  const records =
-    getDailyRecords();
-
-  const mutualPrayers =
-    getMutualPrayers();
-
   const sharedDays =
     getSharedActiveDayCount();
 
@@ -2097,37 +3091,41 @@ function updateBadges() {
   let esmaCount = 0;
   let prayerCount = 0;
 
-  Object.values(records).forEach(
-    dayRecords => {
-      Object.values(dayRecords).forEach(
-        record => {
-          if (record.quran) {
-            quranCount += 1;
-          }
+  Object.values(
+    dailyRecordsCache
+  ).forEach(dayRecords => {
+    Object.values(
+      dayRecords
+    ).forEach(record => {
+      if (record.quran) {
+        quranCount += 1;
+      }
 
-          if (record.asma) {
-            esmaCount += 1;
-          }
+      if (record.asma) {
+        esmaCount += 1;
+      }
 
-          prayerCount += [
-            "fajr",
-            "dhuhr",
-            "asr",
-            "maghrib",
-            "isha"
-          ].filter(
-            field => record[field]
-          ).length;
-        }
-      );
-    }
-  );
+      prayerCount += [
+        "fajr",
+        "dhuhr",
+        "asr",
+        "maghrib",
+        "isha"
+      ].filter(
+        field =>
+          record[field]
+      ).length;
+    });
+  });
 
   const mutualPrayerCount =
     Object.values(
-      mutualPrayers
+      mutualPrayersCache
     ).reduce(
-      (total, dayPrayers) =>
+      (
+        total,
+        dayPrayers
+      ) =>
         total +
         Object.keys(
           dayPrayers
@@ -2201,6 +3199,7 @@ function setBadgeState(
         : "Kilitli";
   }
 }
+
 /* =========================================================
    TAKVİM
 ========================================================= */
@@ -2236,15 +3235,26 @@ function renderCalendar() {
         month: "long",
         year: "numeric"
       }
-    ).format(calendarDate);
+    ).format(
+      calendarDate
+    );
 
-  calendarDays.innerHTML = "";
+  calendarDays.innerHTML =
+    "";
 
   const firstDayOfMonth =
-    new Date(year, month, 1);
+    new Date(
+      year,
+      month,
+      1
+    );
 
   const lastDayOfMonth =
-    new Date(year, month + 1, 0);
+    new Date(
+      year,
+      month + 1,
+      0
+    );
 
   const totalDays =
     lastDayOfMonth.getDate();
@@ -2263,7 +3273,9 @@ function renderCalendar() {
     index += 1
   ) {
     const emptyDay =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
     emptyDay.className =
       "calendar-day empty";
@@ -2279,14 +3291,19 @@ function renderCalendar() {
     day += 1
   ) {
     const date =
-      new Date(year, month, day);
+      new Date(
+        year,
+        month,
+        day
+      );
 
     const dateKey =
-      formatDateKey(date);
+      formatDateKey(
+        date
+      );
 
     calendarDays.appendChild(
       createCalendarDay(
-        date,
         dateKey,
         day
       )
@@ -2295,15 +3312,13 @@ function renderCalendar() {
 }
 
 function createCalendarDay(
-  date,
   dateKey,
   dayNumber
 ) {
-  const records =
-    getDailyRecords();
-
   const dayRecords =
-    records[dateKey] || {};
+    dailyRecordsCache[
+      dateKey
+    ] || {};
 
   const damlaActive =
     hasAnyCompletedCheck(
@@ -2316,11 +3331,18 @@ function createCalendarDay(
     );
 
   const button =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
 
-  button.type = "button";
-  button.className = "calendar-day";
-  button.dataset.date = dateKey;
+  button.type =
+    "button";
+
+  button.className =
+    "calendar-day";
+
+  button.dataset.date =
+    dateKey;
 
   button.setAttribute(
     "aria-label",
@@ -2330,7 +3352,8 @@ function createCalendarDay(
   );
 
   if (
-    dateKey === getTodayKey()
+    dateKey ===
+    getTodayKey()
   ) {
     button.classList.add(
       "today"
@@ -2347,7 +3370,9 @@ function createCalendarDay(
   }
 
   button.innerHTML = `
-    <span class="calendar-day-number">
+    <span
+      class="calendar-day-number"
+    >
       ${dayNumber}
     </span>
 
@@ -2412,10 +3437,14 @@ function openDayDetailModal(
   }
 
   title.textContent =
-    formatReadableDate(dateKey);
+    formatReadableDate(
+      dateKey
+    );
 
   content.innerHTML =
-    createDayDetailHtml(dateKey);
+    createDayDetailHtml(
+      dateKey
+    );
 
   modal.classList.remove(
     "hidden"
@@ -2442,71 +3471,85 @@ function closeDayDetailModal() {
 function createDayDetailHtml(
   dateKey
 ) {
-  const records =
-    getDailyRecords();
-
-  const notes =
-    getDailyNotes();
-
-  const mutualPrayers =
-    getMutualPrayers();
-
-  return Object.keys(USERS)
+  return Object.keys(
+    USERS
+  )
     .map(userId => {
       const user =
         USERS[userId];
 
       const record =
-        records[dateKey]?.[userId] ||
+        dailyRecordsCache[
+          dateKey
+        ]?.[userId] ||
         createEmptyDailyRecord();
 
       const completedFields =
         CHECK_FIELDS.filter(
-          field => record[field]
+          field =>
+            record[field]
         );
 
       const note =
-        notes[dateKey]?.[userId]
-          ?.text || "";
+        dailyNotesCache[
+          dateKey
+        ]?.[userId]?.text ||
+        "";
 
       const prayedForFriend =
         Boolean(
-          mutualPrayers[dateKey]
-            ?.[userId]
+          mutualPrayersCache[
+            dateKey
+          ]?.[userId]
         );
 
       const completedHtml =
-        completedFields.length > 0
+        completedFields.length >
+        0
           ? completedFields
               .map(
                 field => `
-                  <span class="day-detail-item">
+                  <span
+                    class="day-detail-item"
+                  >
                     ${escapeHtml(
-                      FIELD_LABELS[field]
+                      FIELD_LABELS[
+                        field
+                      ]
                     )}
                   </span>
                 `
               )
               .join("")
           : `
-              <span class="day-detail-empty">
+              <span
+                class="day-detail-empty"
+              >
                 Bu gün için kayıt bulunmuyor.
               </span>
             `;
 
       return `
-        <section class="day-detail-user">
+        <section
+          class="day-detail-user"
+        >
           <h3>
-            ${escapeHtml(user.name)}
+            ${escapeHtml(
+              user.name
+            )}
           </h3>
 
-          <div class="day-detail-list">
+          <div
+            class="day-detail-list"
+          >
             ${completedHtml}
 
             ${
               prayedForFriend
                 ? `
-                  <span class="day-detail-item">
+                  <span
+                    class="day-detail-item"
+                  >
                     🤲 Birbirine dua
                   </span>
                 `
@@ -2518,7 +3561,9 @@ function createDayDetailHtml(
             note
               ? `
                 <blockquote>
-                  ${escapeHtml(note)}
+                  ${escapeHtml(
+                    note
+                  )}
                 </blockquote>
               `
               : ""
@@ -2565,7 +3610,9 @@ function toggleTheme() {
     newTheme
   );
 
-  updateThemeButton(newTheme);
+  updateThemeButton(
+    newTheme
+  );
 
   showToast(
     isLightTheme
@@ -2574,7 +3621,9 @@ function toggleTheme() {
   );
 }
 
-function updateThemeButton(theme) {
+function updateThemeButton(
+  theme
+) {
   const themeToggleButton =
     document.getElementById(
       "themeToggleButton"
@@ -2589,7 +3638,11 @@ function updateThemeButton(theme) {
 
   themeToggleButton.innerHTML = `
     <span aria-hidden="true">
-      ${isLight ? "🌙" : "☀️"}
+      ${
+        isLight
+          ? "🌙"
+          : "☀️"
+      }
     </span>
   `;
 
@@ -2607,7 +3660,7 @@ function updateThemeButton(theme) {
 }
 
 /* =========================================================
-   TOAST MESAJLARI
+   TOAST
 ========================================================= */
 
 function showToast(message) {
@@ -2651,73 +3704,7 @@ function showToast(message) {
 }
 
 /* =========================================================
-   LOCALSTORAGE YARDIMCILARI
-========================================================= */
-
-function getStorageObject(
-  key,
-  fallbackValue = {}
-) {
-  try {
-    const storedValue =
-      localStorage.getItem(key);
-
-    if (!storedValue) {
-      return fallbackValue;
-    }
-
-    const parsedValue =
-      JSON.parse(storedValue);
-
-    return (
-      parsedValue ??
-      fallbackValue
-    );
-  } catch (error) {
-    console.error(
-      `${key} okunamadı:`,
-      error
-    );
-
-    return fallbackValue;
-  }
-}
-
-function getStorageArray(key) {
-  const value =
-    getStorageObject(
-      key,
-      []
-    );
-
-  return Array.isArray(value)
-    ? value
-    : [];
-}
-
-function setStorageObject(
-  key,
-  value
-) {
-  try {
-    localStorage.setItem(
-      key,
-      JSON.stringify(value)
-    );
-  } catch (error) {
-    console.error(
-      `${key} kaydedilemedi:`,
-      error
-    );
-
-    showToast(
-      "Kayıt sırasında bir sorun oluştu."
-    );
-  }
-}
-
-/* =========================================================
-   GENEL YARDIMCILAR
+   YARDIMCILAR
 ========================================================= */
 
 function setText(
@@ -2735,29 +3722,26 @@ function setText(
   }
 }
 
-function createId() {
-  if (
-    typeof crypto !==
-      "undefined" &&
-    typeof crypto.randomUUID ===
-      "function"
-  ) {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random()
-    .toString(16)
-    .slice(2)}`;
-}
-
 function escapeHtml(value) {
-  const text =
-    String(value);
-
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+  return String(value)
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+} 
