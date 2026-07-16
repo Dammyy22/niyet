@@ -1,5 +1,3 @@
-```javascript
-"use strict";
 
 /* =========================================================
    NİYET - GERÇEK GİRİŞ API'Sİ
@@ -514,4 +512,4 @@ function jsonResponse(
     }
   });
 }
-```
+
