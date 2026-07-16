@@ -1,1 +1,30 @@
+/* =========================================================
+   LOGIN HATA ANİMASYONU
+========================================================= */
 
+.login-card.login-shake {
+  animation: loginShake 420ms ease;
+}
+
+@keyframes loginShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-8px);
+  }
+
+  40% {
+    transform: translateX(7px);
+  }
+
+  60% {
+    transform: translateX(-5px);
+  }
+
+  80% {
+    transform: translateX(3px);
+  }
+}
