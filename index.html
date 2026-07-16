@@ -97,9 +97,13 @@
         </span>
       </button>
 
-      <a href="login.html" class="profile-menu-link">
-        Giriş sayfasına git
-      </a>
+     <button
+  type="button"
+  class="profile-menu-link"
+  id="logoutButton"
+>
+  Güvenli çıkış yap
+</button>
     </div>
   </header>
 
@@ -1246,6 +1250,25 @@
     </div>
   </noscript>
 
-  <script src="app.js" defer></script>
+ <!-- Supabase tarayıcı kütüphanesi -->
+<script
+  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
+
+<!-- Supabase bağlantısı -->
+<script
+  src="./functions/supabase.js?v=1"
+></script>
+
+<!-- Ana sayfa oturum kontrolü -->
+<script
+  src="./functions/auth.js?v=1"
+></script>
+
+<!-- Mevcut uygulama kodu -->
+<script
+  src="./app.js?v=1"
+  defer
+></script>
 </body>
 </html>
