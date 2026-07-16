@@ -21,14 +21,14 @@ const DEMO_USERS = {
     id: "damla",
     name: "Damla",
     username: "damla",
-    password: "niyetdamla"
+    password: "123"
   },
 
   hilal: {
     id: "hilal",
     name: "Hilal",
     username: "hilal",
-    password: "niyethilal"
+    password: "123"
   }
 };
 
@@ -265,7 +265,7 @@ function authenticateUser(username, password) {
   );
 
   window.setTimeout(() => {
-    window.location.href = "../index.html";
+    window.location.href = "/niyet/index.html";
   }, 700);
 }
 
