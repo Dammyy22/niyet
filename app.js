@@ -315,29 +315,58 @@ function bindCheckboxEvents() {
   );
 
   checkboxes.forEach(checkbox => {
-    checkbox.addEventListener("change", () => {
+    checkbox.addEventListener("change", async () => {
       const userId = checkbox.dataset.user;
       const checkName = checkbox.dataset.check;
+      const checked = checkbox.checked;
 
       if (userId !== activeUser) {
-        checkbox.checked = !checkbox.checked;
-        showToast("Yalnızca kendi kayıtlarını değiştirebilirsin.");
+        checkbox.checked = !checked;
+
+        showToast(
+          "Yalnızca kendi kayıtlarını değiştirebilirsin."
+        );
+
         return;
       }
 
-      updateDailyCheck(userId, checkName, checkbox.checked);
-      updateUserProgress(userId);
-      calculateMonthlyStatistics();
-      calculateSharedStreak();
-      updateGarden();
-      updateBadges();
-      renderCalendar();
+      checkbox.disabled = true;
 
-      const message = checkbox.checked
-        ? `${FIELD_LABELS[checkName]} kaydedildi. 🌿`
-        : `${FIELD_LABELS[checkName]} işareti kaldırıldı.`;
+      try {
+        await updateDailyCheck(
+          userId,
+          checkName,
+          checked
+        );
 
-      showToast(message);
+        updateUserProgress(userId);
+        calculateMonthlyStatistics();
+        calculateSharedStreak();
+        updateGarden();
+        updateBadges();
+        renderCalendar();
+
+        showToast(
+          checked
+            ? `${FIELD_LABELS[checkName]} kaydedildi. 🌿`
+            : `${FIELD_LABELS[checkName]} işareti kaldırıldı.`
+        );
+      } catch (error) {
+        console.error(
+          "Supabase günlük kayıt hatası:",
+          error
+        );
+
+        checkbox.checked = !checked;
+
+        showToast(
+          `Kayıt yapılamadı: ${
+            error.message || "Bilinmeyen hata"
+          }`
+        );
+      } finally {
+        updateEditableAreas();
+      }
     });
   });
 }
@@ -981,13 +1010,12 @@ function updateEditableAreas() {
 
 /* =========================================================
    GÜNLÜK KAYITLAR
+/* =========================================================
+   GÜNLÜK KAYITLAR - SUPABASE
 ========================================================= */
 
 function getDailyRecords() {
-  return getStorageObject(
-    STORAGE_KEYS.dailyRecords,
-    {}
-  );
+  return dailyRecordsCache;
 }
 
 function createEmptyDailyRecord() {
@@ -1000,16 +1028,101 @@ function createEmptyDailyRecord() {
   );
 }
 
-function loadDailyRecords() {
-  const records =
-    getDailyRecords();
+async function loadProfileIds() {
+  const { data, error } =
+    await window.niyetSupabase
+      .from("profiles")
+      .select("id, username");
 
-  const todayKey =
-    getTodayKey();
+  if (error) {
+    throw error;
+  }
+
+  profileIds = {};
+
+  (data || []).forEach(profile => {
+    const username =
+      String(profile.username).toLowerCase();
+
+    if (USERS[username]) {
+      profileIds[username] = profile.id;
+    }
+  });
+
+  console.log(
+    "Supabase profil eşleşmeleri:",
+    profileIds
+  );
+
+  if (!profileIds[activeUser]) {
+    throw new Error(
+      `${activeUser} profili profiles tablosunda bulunamadı.`
+    );
+  }
+}
+
+async function loadDailyRecords() {
+  const { data, error } =
+    await window.niyetSupabase
+      .from("daily_checks")
+      .select(
+        "user_id, check_date, item_key, completed"
+      )
+      .order("check_date", {
+        ascending: true
+      });
+
+  if (error) {
+    throw error;
+  }
+
+  const usernameByProfileId = {};
+
+  Object.entries(profileIds).forEach(
+    ([username, profileId]) => {
+      usernameByProfileId[profileId] =
+        username;
+    }
+  );
+
+  dailyRecordsCache = {};
+
+  (data || []).forEach(row => {
+    const username =
+      usernameByProfileId[row.user_id];
+
+    if (
+      !username ||
+      !CHECK_FIELDS.includes(row.item_key)
+    ) {
+      return;
+    }
+
+    if (!dailyRecordsCache[row.check_date]) {
+      dailyRecordsCache[row.check_date] = {};
+    }
+
+    if (
+      !dailyRecordsCache[row.check_date][username]
+    ) {
+      dailyRecordsCache[row.check_date][username] =
+        createEmptyDailyRecord();
+    }
+
+    dailyRecordsCache[row.check_date][username][
+      row.item_key
+    ] = Boolean(row.completed);
+  });
+
+  renderDailyRecordCheckboxes();
+}
+
+function renderDailyRecordCheckboxes() {
+  const todayKey = getTodayKey();
 
   Object.keys(USERS).forEach(userId => {
-    const userRecord =
-      records[todayKey]?.[userId] ||
+    const record =
+      dailyRecordsCache[todayKey]?.[userId] ||
       createEmptyDailyRecord();
 
     CHECK_FIELDS.forEach(field => {
@@ -1020,39 +1133,85 @@ function loadDailyRecords() {
 
       if (checkbox) {
         checkbox.checked =
-          Boolean(userRecord[field]);
+          Boolean(record[field]);
       }
     });
   });
+
+  updateEditableAreas();
 }
 
-function updateDailyCheck(
+async function updateDailyCheck(
   userId,
   checkName,
   checked
 ) {
-  const records =
-    getDailyRecords();
+  if (userId !== activeUser) {
+    throw new Error(
+      "Başka kullanıcının kaydı değiştirilemez."
+    );
+  }
+
+  if (!CHECK_FIELDS.includes(checkName)) {
+    throw new Error(
+      "Geçersiz takip alanı."
+    );
+  }
+
+  const profileId =
+    profileIds[userId];
+
+  if (!profileId) {
+    throw new Error(
+      "Kullanıcı profil ID'si bulunamadı."
+    );
+  }
 
   const todayKey =
     getTodayKey();
 
-  if (!records[todayKey]) {
-    records[todayKey] = {};
+  const payload = {
+    user_id: profileId,
+    check_date: todayKey,
+    item_key: checkName,
+    item_label: FIELD_LABELS[checkName],
+    completed: Boolean(checked)
+  };
+
+  console.log(
+    "Supabase'e gönderilen kayıt:",
+    payload
+  );
+
+  const { data, error } =
+    await window.niyetSupabase
+      .from("daily_checks")
+      .upsert(payload, {
+        onConflict:
+          "user_id,check_date,item_key"
+      })
+      .select();
+
+  if (error) {
+    throw error;
   }
 
-  if (!records[todayKey][userId]) {
-    records[todayKey][userId] =
+  console.log(
+    "Supabase kayıt sonucu:",
+    data
+  );
+
+  if (!dailyRecordsCache[todayKey]) {
+    dailyRecordsCache[todayKey] = {};
+  }
+
+  if (!dailyRecordsCache[todayKey][userId]) {
+    dailyRecordsCache[todayKey][userId] =
       createEmptyDailyRecord();
   }
 
-  records[todayKey][userId][checkName] =
+  dailyRecordsCache[todayKey][userId][checkName] =
     Boolean(checked);
-
-  setStorageObject(
-    STORAGE_KEYS.dailyRecords,
-    records
-  );
 }
 
 function updateAllProgress() {
@@ -1062,11 +1221,8 @@ function updateAllProgress() {
 }
 
 function updateUserProgress(userId) {
-  const records =
-    getDailyRecords();
-
   const todayRecord =
-    records[getTodayKey()]?.[userId] ||
+    dailyRecordsCache[getTodayKey()]?.[userId] ||
     createEmptyDailyRecord();
 
   const completedCount =
@@ -1076,9 +1232,10 @@ function updateUserProgress(userId) {
 
   const percentage =
     Math.round(
-      (completedCount /
-        CHECK_FIELDS.length) *
-        100
+      (
+        completedCount /
+        CHECK_FIELDS.length
+      ) * 100
     );
 
   setText(
@@ -1095,16 +1252,12 @@ function updateUserProgress(userId) {
     progressFill.style.width =
       `${percentage}%`;
 
-    const progressBar =
-      progressFill.parentElement;
-
-    progressBar?.setAttribute(
+    progressFill.parentElement?.setAttribute(
       "aria-valuenow",
       percentage.toString()
     );
   }
 }
-
 /* =========================================================
    BİRBİRİNE DUA ET
 ========================================================= */
