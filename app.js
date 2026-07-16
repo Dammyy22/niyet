@@ -3199,7 +3199,29 @@ function setBadgeState(
         : "Kilitli";
   }
 }
+function subscribeToRealtimeUpdates() {
+  window.niyetSupabase
+    .channel("niyet-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "daily_checks"
+      },
+      async () => {
+        await loadDailyRecords();
 
+        updateAllProgress();
+        calculateMonthlyStatistics();
+        calculateSharedStreak();
+        updateGarden();
+        updateBadges();
+        renderCalendar();
+      }
+    )
+    .subscribe();
+}
 /* =========================================================
    TAKVİM
 ========================================================= */
