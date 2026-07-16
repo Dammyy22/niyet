@@ -4140,7 +4140,36 @@ function niyetPrepareEsmaCard() {
 
   return card;
 }
+function niyetGetPassedDayCount() {
+  const startDate =
+    typeof NIYET_DAILY_START_DATE !== "undefined"
+      ? NIYET_DAILY_START_DATE
+      : new Date(2026, 6, 16);
 
+  const now = new Date();
+
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const normalizedStartDate = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  );
+
+  const oneDay =
+    1000 * 60 * 60 * 24;
+
+  return Math.floor(
+    (
+      today -
+      normalizedStartDate
+    ) / oneDay
+  );
+}
 /* =========================================================
    ESMAYI SUPABASE'TEN GETİR
 ========================================================= */
