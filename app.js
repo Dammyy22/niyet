@@ -828,7 +828,8 @@ function formatReadableDate(
 ========================================================= */
 
 async function renderDailyContent() {
-  const today = new Date();
+  const today =
+    new Date();
 
   const dayNumber =
     getDayNumberOfYear(today);
@@ -836,9 +837,13 @@ async function renderDailyContent() {
   const localContent =
     DAILY_CONTENT[
       dayNumber %
-        DAILY_CONTENT.length
+      DAILY_CONTENT.length
     ];
 
+  /*
+    Esma, dua ve küçük iyilik
+    eski sistemden devam ediyor.
+  */
   setText(
     "dailyEsmaName",
     localContent.esma.name
@@ -869,103 +874,167 @@ async function renderDailyContent() {
     localContent.challenge
   );
 
-  setText(
-    "dailyVerseSource",
-    "Ayet yükleniyor..."
-  );
+  const loadingMessage =
+    document.getElementById(
+      "dailySurahLoadingMessage"
+    );
 
-  setText(
-    "dailyVerseArabic",
-    "..."
-  );
+  const translationContainer =
+    document.getElementById(
+      "dailySurahTranslation"
+    );
 
-  setText(
-    "dailyVerseReading",
-    ""
-  );
+  const arabicContainer =
+    document.getElementById(
+      "dailySurahArabic"
+    );
 
-  setText(
-    "dailyVerseTranslation",
-    "Elmalılı Hamdi Yazır meali yükleniyor..."
-  );
+  if (loadingMessage) {
+    loadingMessage.hidden =
+      false;
 
-  setText(
-    "dailyVerseTafsir",
-    ""
-  );
+    loadingMessage.textContent =
+      "Elmalılı Hamdi Yazır meali yükleniyor...";
+  }
+
+  if (translationContainer) {
+    translationContainer.innerHTML =
+      "";
+  }
+
+  if (arabicContainer) {
+    arabicContainer.innerHTML =
+      "";
+  }
 
   try {
     if (
       !window.niyetQuran
-        ?.loadDailyAyah
+        ?.loadDailySurah
     ) {
       throw new Error(
-        "Kur'an içerik dosyası yüklenemedi."
+        "Kur'an içerik sistemi yüklenemedi."
       );
     }
 
-    const ayah =
+    const surah =
       await window.niyetQuran
-        .loadDailyAyah();
+        .loadDailySurah();
 
     setText(
-      "dailyVerseSource",
-      `${ayah.surahName} Suresi, ${ayah.ayahNumber}`
+      "dailySurahName",
+      `${surah.turkishName} Suresi`
     );
 
-    setText(
-      "dailyVerseArabic",
-      ayah.arabicText
-    );
+    const revelationText =
+      window.niyetQuran
+        .getRevelationTypeText(
+          surah.revelationType
+        );
 
     setText(
-      "dailyVerseReading",
-      `${ayah.surahArabicName} · ${ayah.reference}`
+      "dailySurahMeta",
+      `${surah.number}. sure · ` +
+      `${surah.ayahCount} ayet · ` +
+      revelationText
     );
 
-    setText(
-      "dailyVerseTranslation",
-      `“${ayah.translation}”`
-    );
+    if (translationContainer) {
+      translationContainer.innerHTML =
+        surah.translationAyahs
+          .map(
+            ayah => `
+              <div class="surah-ayah translation-ayah">
+                <span class="surah-ayah-number">
+                  ${ayah.number}
+                </span>
+
+                <p>
+                  ${escapeHtml(
+                    ayah.text
+                  )}
+                </p>
+              </div>
+            `
+          )
+          .join("");
+    }
+
+    if (arabicContainer) {
+      arabicContainer.innerHTML =
+        surah.arabicAyahs
+          .map(
+            ayah => `
+              <div class="surah-ayah arabic-ayah">
+                <span class="surah-ayah-number">
+                  ${ayah.number}
+                </span>
+
+                <p>
+                  ${escapeHtml(
+                    ayah.text
+                  )}
+                </p>
+              </div>
+            `
+          )
+          .join("");
+    }
 
     setText(
-      "dailyVerseTafsir",
-      `Meal: ${ayah.translationSource} · Veri kaynağı: ${ayah.apiSource}`
-    );
-  } catch (error) {
-    console.error(
-      "Günlük ayet yüklenemedi:",
-      error
+      "dailySurahTranslationSource",
+      `${surah.translationSource} · ${surah.dataSource}`
     );
 
     /*
-      İnternet veya API sorunu olursa
-      eski yerel içerik gösterilir.
+      Kısa tefsir henüz ayrı bir
+      güvenilir kaynağa bağlanmadı.
     */
     setText(
-      "dailyVerseSource",
-      localContent.verse.source
+      "dailySurahTafsir",
+      `${surah.turkishName} Suresi için güvenilir kısa tefsir metni henüz sisteme eklenmedi. Meal ve Arapça metin yukarıdaki bölümlerde okunabilir.`
     );
 
     setText(
-      "dailyVerseArabic",
-      localContent.verse.arabic
+      "dailySurahTafsirSource",
+      "Kısa tefsir kaynağı hazırlanıyor."
+    );
+
+    if (loadingMessage) {
+      loadingMessage.hidden =
+        true;
+    }
+  } catch (error) {
+    console.error(
+      "Günün suresi yüklenemedi:",
+      error
     );
 
     setText(
-      "dailyVerseReading",
-      localContent.verse.reading
+      "dailySurahName",
+      "Sure yüklenemedi"
     );
 
     setText(
-      "dailyVerseTranslation",
-      `“${localContent.verse.translation}”`
+      "dailySurahMeta",
+      "Bağlantı kontrol ediliyor"
     );
 
     setText(
-      "dailyVerseTafsir",
-      "Ayet kaynağına şu anda ulaşılamadığı için kayıtlı içerik gösteriliyor."
+      "dailySurahTafsir",
+      "Sure içeriği şu anda alınamadı."
     );
+
+    if (loadingMessage) {
+      loadingMessage.hidden =
+        false;
+
+      loadingMessage.textContent =
+        `Sure yüklenemedi: ${
+          error.message ||
+          "Bilinmeyen hata"
+        }`;
+    }
   }
 }
 
