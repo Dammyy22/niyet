@@ -4427,3 +4427,1522 @@ function escapeHtml(value) {
       "&#039;"
     );
 } 
+/* =========================================================
+   NİYET — GÜNÜN ESMASI VE GÜNÜN SURESİ
+   BU BLOĞU APP.JS DOSYASININ EN ALTINA EKLE
+========================================================= */
+
+const NIYET_DAILY_START_DATE =
+  new Date(2026, 6, 16);
+
+const NIYET_QURAN_API =
+  "https://api.alquran.cloud/v1";
+
+const NIYET_SURAH_NAMES = [
+  "Fâtiha",
+  "Bakara",
+  "Âl-i İmrân",
+  "Nisâ",
+  "Mâide",
+  "En‘âm",
+  "A‘râf",
+  "Enfâl",
+  "Tevbe",
+  "Yûnus",
+  "Hûd",
+  "Yûsuf",
+  "Ra‘d",
+  "İbrâhîm",
+  "Hicr",
+  "Nahl",
+  "İsrâ",
+  "Kehf",
+  "Meryem",
+  "Tâhâ",
+  "Enbiyâ",
+  "Hac",
+  "Mü’minûn",
+  "Nûr",
+  "Furkân",
+  "Şuarâ",
+  "Neml",
+  "Kasas",
+  "Ankebût",
+  "Rûm",
+  "Lokmân",
+  "Secde",
+  "Ahzâb",
+  "Sebe’",
+  "Fâtır",
+  "Yâsîn",
+  "Sâffât",
+  "Sâd",
+  "Zümer",
+  "Mü’min",
+  "Fussilet",
+  "Şûrâ",
+  "Zuhruf",
+  "Duhân",
+  "Câsiye",
+  "Ahkâf",
+  "Muhammed",
+  "Fetih",
+  "Hucurât",
+  "Kâf",
+  "Zâriyât",
+  "Tûr",
+  "Necm",
+  "Kamer",
+  "Rahmân",
+  "Vâkıa",
+  "Hadîd",
+  "Mücâdele",
+  "Haşr",
+  "Mümtehine",
+  "Saf",
+  "Cum‘a",
+  "Münâfikûn",
+  "Tegābün",
+  "Talâk",
+  "Tahrîm",
+  "Mülk",
+  "Kalem",
+  "Hâkka",
+  "Meâric",
+  "Nûh",
+  "Cin",
+  "Müzzemmil",
+  "Müddessir",
+  "Kıyâmet",
+  "İnsân",
+  "Mürselât",
+  "Nebe’",
+  "Nâziât",
+  "Abese",
+  "Tekvîr",
+  "İnfitâr",
+  "Mutaffifîn",
+  "İnşikāk",
+  "Bürûc",
+  "Târık",
+  "A‘lâ",
+  "Gāşiye",
+  "Fecr",
+  "Beled",
+  "Şems",
+  "Leyl",
+  "Duhâ",
+  "İnşirâh",
+  "Tîn",
+  "Alak",
+  "Kadir",
+  "Beyyine",
+  "Zilzâl",
+  "Âdiyât",
+  "Kāria",
+  "Tekâsür",
+  "Asr",
+  "Hümeze",
+  "Fîl",
+  "Kureyş",
+  "Mâûn",
+  "Kevser",
+  "Kâfirûn",
+  "Nasr",
+  "Tebbet",
+  "İhlâs",
+  "Felak",
+  "Nâs"
+];
+
+function niyetGetPassedDayCount() {
+  const now =
+    new Date();
+
+  const today =
+    new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+  const start =
+    new Date(
+      NIYET_DAILY_START_DATE.getFullYear(),
+      NIYET_DAILY_START_DATE.getMonth(),
+      NIYET_DAILY_START_DATE.getDate()
+    );
+
+  return Math.floor(
+    (today - start) /
+    (1000 * 60 * 60 * 24)
+  );
+}
+
+function niyetSafeText(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "—";
+  }
+
+  return String(value);
+}
+
+function niyetSafeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function niyetRenderTags(items) {
+  if (
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
+    return `
+      <span class="niyet-esma-tag">
+        Bilgi bulunmuyor
+      </span>
+    `;
+  }
+
+  return items
+    .map(
+      item => `
+        <span class="niyet-esma-tag">
+          ${niyetSafeHtml(item)}
+        </span>
+      `
+    )
+    .join("");
+}
+
+/* =========================================================
+   ESMÂ KARTININ HTML YAPISI
+========================================================= */
+
+function niyetPrepareEsmaCard() {
+  const oldName =
+    document.getElementById(
+      "dailyEsmaName"
+    );
+
+  const card =
+    oldName?.closest(
+      ".content-card"
+    ) ||
+    document.querySelector(
+      ".esma-card"
+    );
+
+  if (!card) {
+    console.error(
+      "Esma kartı bulunamadı."
+    );
+
+    return null;
+  }
+
+  card.classList.add(
+    "esma-card",
+    "niyet-detailed-esma-card"
+  );
+
+  card.innerHTML = `
+    <div class="content-card-header">
+      <div
+        class="content-icon"
+        aria-hidden="true"
+      >
+        🌿
+      </div>
+
+      <div>
+        <span class="content-label">
+          Günün Esması
+        </span>
+
+        <h3 id="dailyEsmaName">
+          Esma yükleniyor...
+        </h3>
+
+        <small id="dailyEsmaTransliteration">
+          Günlük Esma hazırlanıyor
+        </small>
+      </div>
+    </div>
+
+    <div class="content-card-body">
+      <p
+        class="arabic-text"
+        id="dailyEsmaArabic"
+        lang="ar"
+      >
+        —
+      </p>
+
+      <p
+        class="content-meaning"
+        id="dailyEsmaMeaning"
+      >
+        Esmanın anlamı hazırlanıyor...
+      </p>
+
+      <div class="content-meta">
+        <span>
+          Geleneksel tekrar
+        </span>
+
+        <strong id="dailyEsmaCount">
+          —
+        </strong>
+      </div>
+
+      <p
+        class="gentle-note"
+        id="dailyEsmaCountNote"
+      >
+        Tekrar bilgisi hazırlanıyor...
+      </p>
+
+      <details class="niyet-esma-details">
+        <summary>
+          Esmayı ayrıntılı incele
+        </summary>
+
+        <div class="niyet-esma-detail-content">
+
+          <section class="niyet-esma-section">
+            <h4>Kısa anlamı</h4>
+            <p id="dailyEsmaShortMeaning">—</p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Detaylı anlamı</h4>
+            <p id="dailyEsmaDetailedMeaning">—</p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Bildirdiği ilahî sıfatlar</h4>
+            <p id="dailyEsmaAttributes">—</p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Kur’an’daki bağlamı</h4>
+
+            <p id="dailyEsmaQuranContext">
+              —
+            </p>
+
+            <div
+              class="niyet-esma-tags"
+              id="dailyEsmaQuranReferences"
+            ></div>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>İnsandaki güzel yansıması</h4>
+
+            <p id="dailyEsmaHumanReflection">
+              —
+            </p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Bu yönün eksikliğinde</h4>
+
+            <p id="dailyEsmaDeficiency">
+              —
+            </p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Dengenin bozulması hâlinde</h4>
+
+            <p id="dailyEsmaExcess">
+              —
+            </p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Hangi konularda okunabilir?</h4>
+
+            <div
+              class="niyet-esma-tags"
+              id="dailyEsmaTopics"
+            ></div>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Geleneksel kullanım alanı</h4>
+
+            <p id="dailyEsmaTraditionalBenefits">
+              —
+            </p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Okuma biçimi</h4>
+
+            <p id="dailyEsmaMethod">
+              —
+            </p>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Önerilen zaman</h4>
+
+            <p id="dailyEsmaSuggestedTime">
+              —
+            </p>
+          </section>
+
+          <section
+            class="
+              niyet-esma-section
+              niyet-esma-prayer
+            "
+          >
+            <h4>Bu Esma ile dua</h4>
+
+            <blockquote id="dailyEsmaPrayer">
+              —
+            </blockquote>
+          </section>
+
+          <section class="niyet-esma-section">
+            <h4>Bugünün tefekkürü</h4>
+
+            <p id="dailyEsmaContemplation">
+              —
+            </p>
+          </section>
+
+          <details class="niyet-esma-sources">
+            <summary>
+              Kaynakları göster
+            </summary>
+
+            <div>
+              <p>
+                <strong>TDV:</strong>
+                <span id="dailyEsmaTdvSource">—</span>
+              </p>
+
+              <p>
+                <strong>Diyanet:</strong>
+                <span id="dailyEsmaDiyanetSource">—</span>
+              </p>
+
+              <p>
+                <strong>Gazzâlî:</strong>
+                <span id="dailyEsmaGhazaliSource">—</span>
+              </p>
+
+              <p>
+                <strong>Elmalılı:</strong>
+                <span id="dailyEsmaElmaliliSource">—</span>
+              </p>
+
+              <p>
+                <strong>Geleneksel kaynak:</strong>
+                <span id="dailyEsmaTraditionalSource">—</span>
+              </p>
+            </div>
+          </details>
+        </div>
+      </details>
+    </div>
+
+    <button
+      type="button"
+      class="soft-button"
+      id="markEsmaCompleteButton"
+    >
+      <span aria-hidden="true">✓</span>
+      Okudum
+    </button>
+  `;
+
+  return card;
+}
+
+/* =========================================================
+   ESMAYI SUPABASE'TEN GETİR
+========================================================= */
+
+async function niyetLoadDailyEsma() {
+  if (
+    !window.niyetSupabase ||
+    typeof window.niyetSupabase
+      .from !== "function"
+  ) {
+    throw new Error(
+      "Supabase bağlantısı bulunamadı."
+    );
+  }
+
+  const passedDays =
+    niyetGetPassedDayCount();
+
+  /*
+    Şu anda 15 Esma var.
+    İleride 99'a tamamlandığında bütün sıra
+    otomatik olarak çalışacak.
+  */
+  const { data: availableNames, error: listError } =
+    await window.niyetSupabase
+      .from("divine_names")
+      .select("display_order")
+      .eq("is_active", true)
+      .order("display_order", {
+        ascending: true
+      });
+
+  if (listError) {
+    throw listError;
+  }
+
+  if (
+    !availableNames ||
+    availableNames.length === 0
+  ) {
+    throw new Error(
+      "Supabase divine_names tablosu boş."
+    );
+  }
+
+  /*
+    Listedeki bütün Esmalar tamamlanmadan
+    hata vermemesi için mevcut kayıtlar içinde
+    günlük sıra dönüyor.
+
+    99 isim tamamlanınca 99 günlük döngü olur.
+  */
+  const listIndex =
+    (
+      (
+        passedDays %
+        availableNames.length
+      ) +
+      availableNames.length
+    ) %
+    availableNames.length;
+
+  const requestedOrder =
+    availableNames[listIndex]
+      .display_order;
+
+  const { data, error } =
+    await window.niyetSupabase
+      .from("divine_names")
+      .select(`
+        display_order,
+        name_latin,
+        name_arabic,
+        transliteration,
+        root_letters,
+        short_meaning,
+        detailed_meaning,
+        divine_attributes,
+        quran_context,
+        quran_references,
+        human_reflection,
+        deficiency_effect,
+        excess_effect,
+        spiritual_topics,
+        traditional_benefits,
+        traditional_count,
+        repetition_basis,
+        repetition_note,
+        recommended_method,
+        suggested_time,
+        prayer_example,
+        contemplation_question,
+        tdv_source,
+        diyanet_source,
+        ghazali_source,
+        elmalili_source,
+        traditional_source
+      `)
+      .eq(
+        "display_order",
+        requestedOrder
+      )
+      .eq("is_active", true)
+      .single();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "Bugünün Esması bulunamadı."
+    );
+  }
+
+  niyetRenderDailyEsma(data);
+
+  return data;
+}
+
+function niyetRenderDailyEsma(esma) {
+  setText(
+    "dailyEsmaName",
+    niyetSafeText(
+      esma.name_latin
+    )
+  );
+
+  setText(
+    "dailyEsmaArabic",
+    niyetSafeText(
+      esma.name_arabic
+    )
+  );
+
+  setText(
+    "dailyEsmaTransliteration",
+    niyetSafeText(
+      esma.transliteration
+    )
+  );
+
+  setText(
+    "dailyEsmaMeaning",
+    niyetSafeText(
+      esma.short_meaning
+    )
+  );
+
+  setText(
+    "dailyEsmaShortMeaning",
+    niyetSafeText(
+      esma.short_meaning
+    )
+  );
+
+  setText(
+    "dailyEsmaDetailedMeaning",
+    niyetSafeText(
+      esma.detailed_meaning
+    )
+  );
+
+  setText(
+    "dailyEsmaAttributes",
+    niyetSafeText(
+      esma.divine_attributes
+    )
+  );
+
+  setText(
+    "dailyEsmaQuranContext",
+    niyetSafeText(
+      esma.quran_context
+    )
+  );
+
+  setText(
+    "dailyEsmaHumanReflection",
+    niyetSafeText(
+      esma.human_reflection
+    )
+  );
+
+  setText(
+    "dailyEsmaDeficiency",
+    niyetSafeText(
+      esma.deficiency_effect
+    )
+  );
+
+  setText(
+    "dailyEsmaExcess",
+    niyetSafeText(
+      esma.excess_effect
+    )
+  );
+
+  setText(
+    "dailyEsmaTraditionalBenefits",
+    niyetSafeText(
+      esma.traditional_benefits
+    )
+  );
+
+  setText(
+    "dailyEsmaMethod",
+    niyetSafeText(
+      esma.recommended_method
+    )
+  );
+
+  setText(
+    "dailyEsmaSuggestedTime",
+    niyetSafeText(
+      esma.suggested_time
+    )
+  );
+
+  setText(
+    "dailyEsmaPrayer",
+    niyetSafeText(
+      esma.prayer_example
+    )
+  );
+
+  setText(
+    "dailyEsmaContemplation",
+    niyetSafeText(
+      esma.contemplation_question
+    )
+  );
+
+  setText(
+    "dailyEsmaTdvSource",
+    niyetSafeText(
+      esma.tdv_source
+    )
+  );
+
+  setText(
+    "dailyEsmaDiyanetSource",
+    niyetSafeText(
+      esma.diyanet_source
+    )
+  );
+
+  setText(
+    "dailyEsmaGhazaliSource",
+    niyetSafeText(
+      esma.ghazali_source
+    )
+  );
+
+  setText(
+    "dailyEsmaElmaliliSource",
+    niyetSafeText(
+      esma.elmalili_source
+    )
+  );
+
+  setText(
+    "dailyEsmaTraditionalSource",
+    niyetSafeText(
+      esma.traditional_source
+    )
+  );
+
+  setText(
+    "dailyEsmaCount",
+    esma.traditional_count
+      ? `${esma.traditional_count} defa`
+      : "Belirli sayı yok"
+  );
+
+  setText(
+    "dailyEsmaCountNote",
+    niyetSafeText(
+      esma.repetition_note
+    )
+  );
+
+  const referenceContainer =
+    document.getElementById(
+      "dailyEsmaQuranReferences"
+    );
+
+  if (referenceContainer) {
+    referenceContainer.innerHTML =
+      niyetRenderTags(
+        esma.quran_references
+      );
+  }
+
+  const topicContainer =
+    document.getElementById(
+      "dailyEsmaTopics"
+    );
+
+  if (topicContainer) {
+    topicContainer.innerHTML =
+      niyetRenderTags(
+        esma.spiritual_topics
+      );
+  }
+}
+
+/* =========================================================
+   SURE KARTININ HTML YAPISI
+========================================================= */
+
+function niyetPrepareSurahCard() {
+  const oldVerseElement =
+    document.getElementById(
+      "dailyVerseSource"
+    ) ||
+    document.getElementById(
+      "dailyVerseArabic"
+    );
+
+  let card =
+    oldVerseElement?.closest(
+      ".content-card"
+    );
+
+  if (!card) {
+    const cards =
+      Array.from(
+        document.querySelectorAll(
+          ".daily-content-grid .content-card"
+        )
+      );
+
+    card =
+      cards.find(
+        item =>
+          item.textContent.includes(
+            "Günün Ayeti"
+          ) ||
+          item.textContent.includes(
+            "Günün Suresi"
+          )
+      );
+  }
+
+  if (!card) {
+    console.error(
+      "Sure kartı bulunamadı."
+    );
+
+    return null;
+  }
+
+  card.classList.add(
+    "niyet-surah-card"
+  );
+
+  card.innerHTML = `
+    <div class="content-card-header">
+      <div
+        class="content-icon"
+        aria-hidden="true"
+      >
+        📖
+      </div>
+
+      <div>
+        <span class="content-label">
+          Günün Suresi
+        </span>
+
+        <h3 id="dailySurahName">
+          Sure yükleniyor...
+        </h3>
+
+        <small id="dailySurahMeta">
+          Kur’an verisi hazırlanıyor
+        </small>
+      </div>
+    </div>
+
+    <div class="content-card-body">
+      <p
+        class="gentle-note"
+        id="dailySurahLoadingMessage"
+      >
+        Sure hazırlanıyor...
+      </p>
+
+      <details class="niyet-surah-details">
+        <summary>
+          Türkçe mealin tamamını oku
+        </summary>
+
+        <div
+          class="niyet-surah-list"
+          id="dailySurahTranslation"
+        ></div>
+
+        <p
+          class="gentle-note"
+          id="dailySurahTranslationSource"
+        ></p>
+      </details>
+
+      <details class="niyet-surah-details">
+        <summary>
+          Arapça metni oku
+        </summary>
+
+        <div
+          class="
+            niyet-surah-list
+            niyet-arabic-surah
+          "
+          id="dailySurahArabic"
+          lang="ar"
+        ></div>
+      </details>
+
+      <details class="niyet-surah-details">
+        <summary>
+          Kısa tefsiri oku
+        </summary>
+
+        <p id="dailySurahTafsir">
+          Kısa tefsir daha sonra eklenecek.
+        </p>
+
+        <p
+          class="gentle-note"
+          id="dailySurahTafsirSource"
+        >
+          Tefsir kaynağı hazırlanıyor.
+        </p>
+      </details>
+    </div>
+  `;
+
+  return card;
+}
+
+/* =========================================================
+   GÜNÜN SURESİNİ GETİR
+========================================================= */
+
+function niyetGetDailySurahNumber() {
+  const passedDays =
+    niyetGetPassedDayCount();
+
+  return (
+    (
+      (
+        passedDays %
+        114
+      ) +
+      114
+    ) %
+    114
+  ) + 1;
+}
+
+async function niyetFetchJson(url) {
+  const response =
+    await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `Kur’an servisi hata verdi: ${response.status}`
+    );
+  }
+
+  const result =
+    await response.json();
+
+  if (
+    result.code !== 200 ||
+    !result.data
+  ) {
+    throw new Error(
+      result.status ||
+      "Kur’an verisi alınamadı."
+    );
+  }
+
+  return result.data;
+}
+
+async function niyetLoadDailySurah() {
+  const surahNumber =
+    niyetGetDailySurahNumber();
+
+  const [
+    arabicData,
+    translationData
+  ] =
+    await Promise.all([
+      niyetFetchJson(
+        `${NIYET_QURAN_API}/surah/${surahNumber}/quran-uthmani`
+      ),
+
+      niyetFetchJson(
+        `${NIYET_QURAN_API}/surah/${surahNumber}/tr.yazir`
+      )
+    ]);
+
+  const surahName =
+    NIYET_SURAH_NAMES[
+      surahNumber - 1
+    ] ||
+    translationData.englishName;
+
+  setText(
+    "dailySurahName",
+    `${surahNumber}. ${surahName} Suresi`
+  );
+
+  const revelationText =
+    translationData.revelationType ===
+    "Meccan"
+      ? "Mekkî"
+      : translationData.revelationType ===
+        "Medinan"
+        ? "Medenî"
+        : "Sure";
+
+  setText(
+    "dailySurahMeta",
+    `${revelationText} · ${translationData.numberOfAyahs} ayet`
+  );
+
+  const translationContainer =
+    document.getElementById(
+      "dailySurahTranslation"
+    );
+
+  if (translationContainer) {
+    translationContainer.innerHTML =
+      translationData.ayahs
+        .map(
+          ayah => `
+            <article class="niyet-surah-ayah">
+              <span class="niyet-ayah-number">
+                ${ayah.numberInSurah}
+              </span>
+
+              <p>
+                ${niyetSafeHtml(
+                  ayah.text
+                )}
+              </p>
+            </article>
+          `
+        )
+        .join("");
+  }
+
+  const arabicContainer =
+    document.getElementById(
+      "dailySurahArabic"
+    );
+
+  if (arabicContainer) {
+    arabicContainer.innerHTML =
+      arabicData.ayahs
+        .map(
+          ayah => `
+            <article
+              class="
+                niyet-surah-ayah
+                niyet-arabic-ayah
+              "
+            >
+              <span class="niyet-ayah-number">
+                ${ayah.numberInSurah}
+              </span>
+
+              <p lang="ar">
+                ${niyetSafeHtml(
+                  ayah.text
+                )}
+              </p>
+            </article>
+          `
+        )
+        .join("");
+  }
+
+  setText(
+    "dailySurahTranslationSource",
+    "Meal: Elmalılı Hamdi Yazır · Veri: Al Quran Cloud"
+  );
+
+  setText(
+    "dailySurahLoadingMessage",
+    ""
+  );
+
+  setText(
+    "dailySurahTafsir",
+    `${surahName} Suresi için kısa tefsir metni daha sonra eklenecek.`
+  );
+
+  setText(
+    "dailySurahTafsirSource",
+    "Kısa tefsir kaynağı hazırlanıyor."
+  );
+}
+
+/* =========================================================
+   GÜNLÜK DUA
+========================================================= */
+
+async function niyetLoadDailyPrayer() {
+  if (
+    !window.niyetSupabase ||
+    typeof window.niyetSupabase
+      .from !== "function"
+  ) {
+    return;
+  }
+
+  const { data, error } =
+    await window.niyetSupabase
+      .from("daily_prayers")
+      .select(`
+        title,
+        content,
+        source_name,
+        source_reference,
+        display_order
+      `)
+      .eq("is_active", true)
+      .order("display_order", {
+        ascending: true
+      });
+
+  if (
+    error ||
+    !data ||
+    data.length === 0
+  ) {
+    if (error) {
+      console.error(
+        "Günün duası alınamadı:",
+        error
+      );
+    }
+
+    return;
+  }
+
+  const passedDays =
+    niyetGetPassedDayCount();
+
+  const prayerIndex =
+    (
+      (
+        passedDays %
+        data.length
+      ) +
+      data.length
+    ) %
+    data.length;
+
+  const prayer =
+    data[prayerIndex];
+
+  setText(
+    "dailyPrayerTitle",
+    prayer.title
+  );
+
+  setText(
+    "dailyPrayerText",
+    prayer.content
+  );
+
+  const sourceParts = [
+    prayer.source_name,
+    prayer.source_reference
+  ].filter(Boolean);
+
+  setText(
+    "dailyPrayerSource",
+    sourceParts.length
+      ? `Kaynak: ${sourceParts.join(" · ")}`
+      : "Tür: Genel dua"
+  );
+}
+
+/* =========================================================
+   TÜM GÜNLÜK İÇERİĞİ YÜKLE
+========================================================= */
+
+async function renderDailyContent() {
+  niyetPrepareEsmaCard();
+  niyetPrepareSurahCard();
+
+  const today =
+    new Date();
+
+  const dayNumber =
+    getDayNumberOfYear(today);
+
+  const fallbackContent =
+    DAILY_CONTENT[
+      dayNumber %
+      DAILY_CONTENT.length
+    ];
+
+  const results =
+    await Promise.allSettled([
+      niyetLoadDailyEsma(),
+      niyetLoadDailySurah(),
+      niyetLoadDailyPrayer()
+    ]);
+
+  const [
+    esmaResult,
+    surahResult,
+    prayerResult
+  ] = results;
+
+  if (
+    esmaResult.status ===
+    "rejected"
+  ) {
+    console.error(
+      "Esma yüklenemedi:",
+      esmaResult.reason
+    );
+
+    setText(
+      "dailyEsmaName",
+      fallbackContent.esma.name
+    );
+
+    setText(
+      "dailyEsmaArabic",
+      fallbackContent.esma.arabic
+    );
+
+    setText(
+      "dailyEsmaMeaning",
+      fallbackContent.esma.meaning
+    );
+
+    setText(
+      "dailyEsmaCount",
+      fallbackContent.esma.count
+    );
+
+    setText(
+      "dailyEsmaCountNote",
+      esmaResult.reason?.message ||
+      "Supabase kaydı alınamadı."
+    );
+  }
+
+  if (
+    surahResult.status ===
+    "rejected"
+  ) {
+    console.error(
+      "Sure yüklenemedi:",
+      surahResult.reason
+    );
+
+    setText(
+      "dailySurahName",
+      "Sure yüklenemedi"
+    );
+
+    setText(
+      "dailySurahMeta",
+      surahResult.reason?.message ||
+      "Kur’an servisine ulaşılamadı."
+    );
+
+    setText(
+      "dailySurahLoadingMessage",
+      "Kur’an verisi alınamadı."
+    );
+  }
+
+  if (
+    prayerResult.status ===
+    "rejected"
+  ) {
+    console.error(
+      "Dua yüklenemedi:",
+      prayerResult.reason
+    );
+  }
+
+  setText(
+    "dailyChallengeText",
+    fallbackContent.challenge
+  );
+
+  /*
+    Kartlar yeniden oluşturulduğu için
+    günlük kart butonlarının olaylarını
+    yeniden bağlıyoruz.
+  */
+  const markEsmaButton =
+    document.getElementById(
+      "markEsmaCompleteButton"
+    );
+
+  markEsmaButton?.addEventListener(
+    "click",
+    () => {
+      toggleDailyContentAction(
+        "esma",
+        markEsmaButton,
+        "Esma kaydedildi."
+      );
+
+      synchronizeCheckboxWithContent(
+        "asma"
+      );
+    }
+  );
+}
+
+/* =========================================================
+   UYGULAMA BAŞLANGICINI ASENKRON HALE GETİR
+========================================================= */
+
+async function initializeApplication() {
+  applySavedTheme();
+  renderCurrentDate();
+  renderCurrentYear();
+
+  await renderDailyContent();
+
+  setActiveUser(activeUser);
+  loadDailyRecords();
+  loadDailyContentActions();
+  loadMutualPrayers();
+  loadSharedPrayers();
+  loadDailyNote();
+  updateAllProgress();
+  calculateMonthlyStatistics();
+  calculateSharedStreak();
+  updateGarden();
+  updateBadges();
+  renderCalendar();
+
+  /*
+    Esma butonunu renderDailyContent bağladı.
+    Diğer olayları normal şekilde bağlıyoruz.
+  */
+  bindProfileMenuEvents();
+  bindThemeEvents();
+  bindCheckboxEvents();
+  bindMutualPrayerEvents();
+  bindSharedPrayerEvents();
+  bindDailyNoteEvents();
+  bindCalendarEvents();
+  bindModalEvents();
+
+  const markChallengeButton =
+    document.getElementById(
+      "markChallengeCompleteButton"
+    );
+
+  const dailyPrayerAmenButton =
+    document.getElementById(
+      "dailyPrayerAmenButton"
+    );
+
+  markChallengeButton?.addEventListener(
+    "click",
+    () => {
+      toggleDailyContentAction(
+        "challenge",
+        markChallengeButton,
+        "Bugünün güzel adımı kaydedildi."
+      );
+    }
+  );
+
+  dailyPrayerAmenButton?.addEventListener(
+    "click",
+    () => {
+      toggleDailyContentAction(
+        "dailyPrayerAmen",
+        dailyPrayerAmenButton,
+        "Âmin. 🤍"
+      );
+    }
+  );
+}
+
+/* =========================================================
+   GEREKLİ TASARIMI OTOMATİK EKLE
+========================================================= */
+
+(function niyetAddDailyContentStyles() {
+  if (
+    document.getElementById(
+      "niyetDailyContentStyles"
+    )
+  ) {
+    return;
+  }
+
+  const style =
+    document.createElement("style");
+
+  style.id =
+    "niyetDailyContentStyles";
+
+  style.textContent = `
+    .niyet-detailed-esma-card,
+    .niyet-surah-card {
+      align-self: start;
+    }
+
+    #dailyEsmaTransliteration {
+      display: block;
+      margin-top: 4px;
+      opacity: 0.72;
+      font-size: 0.78rem;
+    }
+
+    .niyet-esma-details,
+    .niyet-surah-details {
+      margin-top: 16px;
+    }
+
+    .niyet-esma-details > summary,
+    .niyet-surah-details > summary,
+    .niyet-esma-sources > summary {
+      cursor: pointer;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .niyet-esma-detail-content {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .niyet-esma-section {
+      padding: 15px;
+      border:
+        1px solid
+        rgba(140, 160, 130, 0.17);
+      border-radius: 14px;
+      background:
+        rgba(140, 160, 130, 0.055);
+    }
+
+    .niyet-esma-section h4 {
+      margin: 0 0 8px;
+      font-size: 0.91rem;
+    }
+
+    .niyet-esma-section p {
+      margin: 0;
+      line-height: 1.75;
+    }
+
+    .niyet-esma-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .niyet-esma-tag {
+      display: inline-flex;
+      padding: 6px 10px;
+      border:
+        1px solid
+        rgba(140, 160, 130, 0.2);
+      border-radius: 999px;
+      font-size: 0.77rem;
+      line-height: 1.3;
+    }
+
+    .niyet-esma-prayer blockquote {
+      margin: 0;
+      padding-left: 14px;
+      border-left:
+        3px solid
+        rgba(140, 170, 120, 0.55);
+      line-height: 1.8;
+    }
+
+    .niyet-esma-sources {
+      padding: 14px;
+      border:
+        1px dashed
+        rgba(140, 160, 130, 0.25);
+      border-radius: 14px;
+    }
+
+    .niyet-esma-sources div {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .niyet-esma-sources p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.65;
+    }
+
+    .niyet-surah-list {
+      display: grid;
+      gap: 12px;
+      max-height: 520px;
+      margin-top: 16px;
+      padding-right: 6px;
+      overflow-y: auto;
+    }
+
+    .niyet-surah-ayah {
+      display: grid;
+      grid-template-columns:
+        34px minmax(0, 1fr);
+      gap: 10px;
+      padding: 12px;
+      border:
+        1px solid
+        rgba(140, 160, 130, 0.15);
+      border-radius: 12px;
+    }
+
+    .niyet-surah-ayah p {
+      margin: 0;
+      line-height: 1.75;
+    }
+
+    .niyet-ayah-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background:
+        rgba(140, 170, 120, 0.12);
+      font-size: 0.72rem;
+    }
+
+    .niyet-arabic-ayah p {
+      direction: rtl;
+      text-align: right;
+      font-size: 1.15rem;
+      line-height: 2.15;
+    }
+
+    @media (max-width: 700px) {
+      .niyet-surah-list {
+        max-height: 430px;
+      }
+
+      .niyet-esma-section {
+        padding: 13px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+})();
