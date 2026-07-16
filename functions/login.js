@@ -1,70 +1,59 @@
 "use strict";
 
-/* =========================================================
-   NİYET - GİRİŞ SAYFASI
-   Dosya: functions/login.js
-
-   Arayüz:
-   https://dammyy22.github.io/niyet/login.html
-
-   API:
-   https://niyet.pages.dev/api/login
-========================================================= */
-
-const LOGIN_API_URL = "https://niyet.pages.dev/api/login";
-
-const LOGIN_STORAGE_KEYS = {
-  activeUser: "niyet_active_user",
-  session: "niyet_session"
-};
-
-const ALLOWED_USERS = {
+const USERS = {
   damla: {
-    id: "damla",
-    name: "Damla"
+    username: "damla",
+    name: "Damla",
+    email: "damla@niyet.local"
   },
 
   hilal: {
-    id: "hilal",
-    name: "Hilal"
+    username: "hilal",
+    name: "Hilal",
+    email: "hilal@niyet.local"
   }
 };
 
 let selectedUser = "damla";
 let toastTimer = null;
 
-/* =========================================================
-   SAYFA BAŞLANGICI
-========================================================= */
-
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initializeLoginPage();
+  await redirectAuthenticatedUser();
 });
 
 function initializeLoginPage() {
-  applySavedTheme();
   bindUserSelection();
   bindPasswordToggle();
   bindLoginForm();
-  bindInputEvents();
   updateSelectedUserInterface();
   fillSelectedUsername();
 }
 
-/* =========================================================
-   KULLANICI SEÇİMİ
-========================================================= */
+async function redirectAuthenticatedUser() {
+  if (!window.niyetSupabase) {
+    return;
+  }
+
+  const {
+    data: { session }
+  } = await window.niyetSupabase.auth.getSession();
+
+  if (session) {
+    window.location.replace("./index.html");
+  }
+}
 
 function bindUserSelection() {
-  const userOptions = document.querySelectorAll(
+  const userButtons = document.querySelectorAll(
     "[data-login-user]"
   );
 
-  userOptions.forEach(option => {
-    option.addEventListener("click", () => {
-      const userId = option.dataset.loginUser;
+  userButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      const userId = button.dataset.loginUser;
 
-      if (!ALLOWED_USERS[userId]) {
+      if (!USERS[userId]) {
         return;
       }
 
@@ -72,9 +61,10 @@ function bindUserSelection() {
 
       updateSelectedUserInterface();
       fillSelectedUsername();
-      clearLoginErrors();
+      clearMessages();
 
-      const passwordInput = document.getElementById("password");
+      const passwordInput =
+        document.getElementById("password");
 
       if (passwordInput) {
         passwordInput.value = "";
@@ -85,105 +75,74 @@ function bindUserSelection() {
 }
 
 function updateSelectedUserInterface() {
-  const userOptions = document.querySelectorAll(
+  const userButtons = document.querySelectorAll(
     "[data-login-user]"
   );
 
-  const selectedLoginUserInput = document.getElementById(
-    "selectedLoginUser"
-  );
-
-  userOptions.forEach(option => {
+  userButtons.forEach(button => {
     const isSelected =
-      option.dataset.loginUser === selectedUser;
+      button.dataset.loginUser === selectedUser;
 
-    option.classList.toggle("active", isSelected);
+    button.classList.toggle("active", isSelected);
 
-    option.setAttribute(
+    button.setAttribute(
       "aria-pressed",
-      isSelected ? "true" : "false"
+      String(isSelected)
     );
   });
 
-  if (selectedLoginUserInput) {
-    selectedLoginUserInput.value = selectedUser;
+  const selectedUserInput =
+    document.getElementById("selectedLoginUser");
+
+  if (selectedUserInput) {
+    selectedUserInput.value = selectedUser;
   }
 }
 
 function fillSelectedUsername() {
-  const usernameInput = document.getElementById("username");
+  const usernameInput =
+    document.getElementById("username");
 
-  if (!usernameInput) {
-    return;
+  if (usernameInput) {
+    usernameInput.value = selectedUser;
   }
-
-  usernameInput.value = selectedUser;
 }
 
-/* =========================================================
-   ŞİFREYİ GÖSTER / GİZLE
-========================================================= */
-
 function bindPasswordToggle() {
-  const passwordInput = document.getElementById("password");
-  const passwordToggle = document.getElementById(
-    "passwordToggle"
-  );
+  const passwordInput =
+    document.getElementById("password");
+
+  const passwordToggle =
+    document.getElementById("passwordToggle");
 
   if (!passwordInput || !passwordToggle) {
     return;
   }
 
   passwordToggle.addEventListener("click", () => {
-    const passwordIsVisible =
+    const isVisible =
       passwordInput.type === "text";
 
-    passwordInput.type = passwordIsVisible
+    passwordInput.type = isVisible
       ? "password"
       : "text";
 
-    passwordToggle.textContent = passwordIsVisible
+    passwordToggle.textContent = isVisible
       ? "👁"
       : "🙈";
 
     passwordToggle.setAttribute(
       "aria-label",
-      passwordIsVisible
+      isVisible
         ? "Şifreyi göster"
         : "Şifreyi gizle"
     );
-
-    passwordToggle.title = passwordIsVisible
-      ? "Şifreyi göster"
-      : "Şifreyi gizle";
   });
 }
-
-/* =========================================================
-   INPUT DAVRANIŞLARI
-========================================================= */
-
-function bindInputEvents() {
-  const usernameInput = document.getElementById("username");
-  const passwordInput = document.getElementById("password");
-
-  usernameInput?.addEventListener("input", () => {
-    clearFieldError("username", "usernameError");
-    hideLoginMessage();
-  });
-
-  passwordInput?.addEventListener("input", () => {
-    clearFieldError("password", "passwordError");
-    hideLoginMessage();
-  });
-}
-
-/* =========================================================
-   GİRİŞ FORMU
-========================================================= */
 
 function bindLoginForm() {
-  const loginForm = document.getElementById("loginForm");
+  const loginForm =
+    document.getElementById("loginForm");
 
   if (!loginForm) {
     return;
@@ -191,244 +150,155 @@ function bindLoginForm() {
 
   loginForm.addEventListener("submit", async event => {
     event.preventDefault();
+    clearMessages();
 
-    clearLoginErrors();
+    const usernameInput =
+      document.getElementById("username");
 
-    const usernameInput = document.getElementById("username");
-    const passwordInput = document.getElementById("password");
+    const passwordInput =
+      document.getElementById("password");
 
-    if (!usernameInput || !passwordInput) {
-      showLoginMessage(
-        "Giriş formu yüklenirken bir sorun oluştu.",
-        "error"
-      );
-
-      return;
-    }
-
-    const username = usernameInput.value
+    const username = usernameInput?.value
       .trim()
       .toLocaleLowerCase("tr-TR");
 
-    const password = passwordInput.value;
+    const password = passwordInput?.value || "";
 
-    const formIsValid = validateLoginForm(
-      username,
-      password
-    );
-
-    if (!formIsValid) {
-      return;
-    }
-
-    /*
-      Kullanıcı seçim kartı ile kullanıcı adı alanının
-      uyuşmasını sağlıyoruz.
-    */
-    if (username !== selectedUser) {
-      showLoginMessage(
-        `Seçili hesap ${ALLOWED_USERS[selectedUser].name}. Kullanıcı adı “${selectedUser}” olmalı.`,
+    if (!USERS[username]) {
+      showMessage(
+        "Damla veya Hilal hesabını seçmelisin.",
         "error"
       );
 
-      setFieldError(
-        "username",
-        "usernameError",
-        "Kullanıcı adı seçili hesapla uyuşmuyor."
+      return;
+    }
+
+    if (username !== selectedUser) {
+      showMessage(
+        `Seçili hesap ${USERS[selectedUser].name}.`,
+        "error"
       );
 
       return;
     }
 
-    await authenticateUser(username, password);
+    if (!password) {
+      showMessage(
+        "Şifreni yazmalısın.",
+        "error"
+      );
+
+      passwordInput?.focus();
+      return;
+    }
+
+    await loginWithSupabase(username, password);
   });
 }
 
-function validateLoginForm(username, password) {
-  let isValid = true;
-
-  if (!username) {
-    setFieldError(
-      "username",
-      "usernameError",
-      "Kullanıcı adını yazmalısın."
+async function loginWithSupabase(username, password) {
+  if (!window.niyetSupabase) {
+    showMessage(
+      "Supabase bağlantısı yüklenemedi.",
+      "error"
     );
 
-    isValid = false;
+    return;
   }
 
-  if (!ALLOWED_USERS[username]) {
-    setFieldError(
-      "username",
-      "usernameError",
-      "Yalnızca Damla veya Hilal hesabıyla giriş yapılabilir."
-    );
-
-    isValid = false;
-  }
-
-  if (!password) {
-    setFieldError(
-      "password",
-      "passwordError",
-      "Şifreni yazmalısın."
-    );
-
-    isValid = false;
-  }
-
-  if (password.length > 200) {
-    setFieldError(
-      "password",
-      "passwordError",
-      "Şifre izin verilen uzunluğu aşıyor."
-    );
-
-    isValid = false;
-  }
-
-  return isValid;
-}
-
-/* =========================================================
-   GERÇEK API GİRİŞİ
-========================================================= */
-
-async function authenticateUser(username, password) {
   const submitButton = document.querySelector(
     ".login-submit-button"
   );
 
-  setSubmitButtonLoading(submitButton, true);
+  setLoading(submitButton, true);
 
-  showLoginMessage(
-    "Bilgilerin kontrol ediliyor...",
+  showMessage(
+    "Giriş bilgilerin kontrol ediliyor...",
     "success"
   );
 
   try {
-    const response = await fetch(LOGIN_API_URL, {
-      method: "POST",
+    const user = USERS[username];
 
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        username,
+    const { data, error } =
+      await window.niyetSupabase.auth.signInWithPassword({
+        email: user.email,
         password
-      })
-    });
+      });
 
-    const result = await readJsonResponse(response);
+    if (error) {
+      console.error("Supabase giriş hatası:", error);
 
-    if (!response.ok || !result?.success) {
-      const errorMessage =
-        result?.message ||
-        "Kullanıcı adı veya şifre hatalı.";
+      showMessage(
+        getReadableLoginError(error),
+        "error"
+      );
 
-      showLoginMessage(errorMessage, "error");
       shakeLoginCard();
-
       return;
     }
 
-    if (
-      !result.user ||
-      !result.user.username ||
-      !result.token ||
-      !result.expiresAt
-    ) {
-      showLoginMessage(
-        "Sunucudan eksik oturum bilgisi geldi.",
+    if (!data.session || !data.user) {
+      showMessage(
+        "Oturum oluşturulamadı.",
         "error"
       );
 
       return;
     }
 
-    saveSession(result);
+    localStorage.setItem(
+      "niyet_active_user",
+      username
+    );
 
-    showLoginMessage(
-      `Hoş geldin ${result.user.name}.`,
+    showMessage(
+      `Hoş geldin ${user.name}.`,
       "success"
     );
 
     showToast(
-      `${result.user.name} hesabına giriş yapıldı. 🌙`
+      `${user.name} hesabına giriş yapıldı. 🌙`
     );
 
     window.setTimeout(() => {
-      window.location.href = "/niyet/index.html";
-    }, 700);
+      window.location.replace("./index.html");
+    }, 600);
   } catch (error) {
-    console.error("Giriş isteği başarısız:", error);
+    console.error("Giriş bağlantı hatası:", error);
 
-    showLoginMessage(
-      "Giriş sunucusuna ulaşılamadı. Cloudflare bağlantısı veya internet erişimi engellenmiş olabilir.",
+    showMessage(
+      "Supabase sunucusuna ulaşılamadı. İnternet bağlantını kontrol et.",
       "error"
     );
-
-    shakeLoginCard();
   } finally {
-    setSubmitButtonLoading(submitButton, false);
+    setLoading(submitButton, false);
   }
 }
 
-async function readJsonResponse(response) {
-  const contentType =
-    response.headers.get("content-type") || "";
+function getReadableLoginError(error) {
+  const message =
+    String(error?.message || "").toLowerCase();
 
-  if (!contentType.includes("application/json")) {
-    return null;
+  if (
+    message.includes("invalid login credentials") ||
+    message.includes("invalid credentials")
+  ) {
+    return "Şifre hatalı.";
   }
 
-  try {
-    return await response.json();
-  } catch {
-    return null;
+  if (message.includes("email not confirmed")) {
+    return "Bu kullanıcı hesabı henüz onaylanmamış.";
   }
+
+  if (message.includes("rate limit")) {
+    return "Çok fazla giriş denemesi yapıldı. Biraz sonra tekrar dene.";
+  }
+
+  return "Giriş yapılamadı. Bilgilerini kontrol et.";
 }
 
-/* =========================================================
-   OTURUM KAYDI
-========================================================= */
-
-function saveSession(result) {
-  const normalizedUsername = result.user.username
-    .trim()
-    .toLocaleLowerCase("tr-TR");
-
-  const session = {
-    token: result.token,
-    expiresAt: result.expiresAt,
-
-    user: {
-      id: result.user.id,
-      name: result.user.name,
-      username: normalizedUsername
-    },
-
-    loggedIn: true,
-    createdAt: new Date().toISOString()
-  };
-
-  localStorage.setItem(
-    LOGIN_STORAGE_KEYS.activeUser,
-    normalizedUsername
-  );
-
-  localStorage.setItem(
-    LOGIN_STORAGE_KEYS.session,
-    JSON.stringify(session)
-  );
-}
-
-/* =========================================================
-   GÖNDER BUTONU
-========================================================= */
-
-function setSubmitButtonLoading(button, isLoading) {
+function setLoading(button, isLoading) {
   if (!button) {
     return;
   }
@@ -436,92 +306,50 @@ function setSubmitButtonLoading(button, isLoading) {
   button.disabled = isLoading;
 
   button.innerHTML = isLoading
-    ? `
-      <span aria-hidden="true">⏳</span>
-      Giriş yapılıyor...
-    `
-    : `
-      <span aria-hidden="true">🌙</span>
-      Giriş Yap
-    `;
+    ? "<span>⏳</span> Giriş yapılıyor..."
+    : "<span>🌙</span> Giriş Yap";
 }
 
-/* =========================================================
-   HATA VE MESAJ YÖNETİMİ
-========================================================= */
+function showMessage(message, type) {
+  const messageElement =
+    document.getElementById("loginMessage");
 
-function setFieldError(
-  inputId,
-  errorElementId,
-  message
-) {
-  const input = document.getElementById(inputId);
-  const errorElement = document.getElementById(
-    errorElementId
-  );
-
-  input?.classList.add("invalid");
-
-  if (errorElement) {
-    errorElement.textContent = message;
-  }
-}
-
-function clearFieldError(inputId, errorElementId) {
-  const input = document.getElementById(inputId);
-  const errorElement = document.getElementById(
-    errorElementId
-  );
-
-  input?.classList.remove("invalid");
-
-  if (errorElement) {
-    errorElement.textContent = "";
-  }
-}
-
-function clearLoginErrors() {
-  clearFieldError("username", "usernameError");
-  clearFieldError("password", "passwordError");
-  hideLoginMessage();
-}
-
-function hideLoginMessage() {
-  const loginMessage = document.getElementById(
-    "loginMessage"
-  );
-
-  if (!loginMessage) {
+  if (!messageElement) {
     return;
   }
 
-  loginMessage.textContent = "";
-  loginMessage.classList.add("hidden");
-  loginMessage.classList.remove("error", "success");
-}
+  messageElement.textContent = message;
 
-function showLoginMessage(message, type) {
-  const loginMessage = document.getElementById(
-    "loginMessage"
-  );
-
-  if (!loginMessage) {
-    return;
-  }
-
-  loginMessage.textContent = message;
-
-  loginMessage.classList.remove(
+  messageElement.classList.remove(
     "hidden",
     "error",
     "success"
   );
 
-  loginMessage.classList.add(type);
+  messageElement.classList.add(type);
+}
+
+function clearMessages() {
+  const messageElement =
+    document.getElementById("loginMessage");
+
+  if (!messageElement) {
+    return;
+  }
+
+  messageElement.textContent = "";
+
+  messageElement.classList.add("hidden");
+
+  messageElement.classList.remove(
+    "error",
+    "success"
+  );
 }
 
 function shakeLoginCard() {
-  const loginCard = document.querySelector(".login-card");
+  const loginCard =
+    document.querySelector(".login-card");
 
   if (!loginCard) {
     return;
@@ -538,29 +366,12 @@ function shakeLoginCard() {
   }, 450);
 }
 
-/* =========================================================
-   TEMA
-========================================================= */
-
-function applySavedTheme() {
-  const savedTheme =
-    localStorage.getItem("niyet_theme") || "dark";
-
-  document.body.classList.toggle(
-    "light-theme",
-    savedTheme === "light"
-  );
-}
-
-/* =========================================================
-   TOAST
-========================================================= */
-
 function showToast(message) {
-  const toast = document.getElementById("toast");
-  const toastMessage = document.getElementById(
-    "toastMessage"
-  );
+  const toast =
+    document.getElementById("toast");
+
+  const toastMessage =
+    document.getElementById("toastMessage");
 
   if (!toast || !toastMessage) {
     return;
@@ -573,5 +384,5 @@ function showToast(message) {
 
   toastTimer = window.setTimeout(() => {
     toast.classList.remove("show");
-  }, 2600);
+  }, 2500);
 }
