@@ -226,26 +226,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   activeUser = authenticatedUser.username;
 
-  initializeApplication();
+  await initializeApplication();
 });
 
-function initializeApplication() {
+async function initializeApplication() {
   applySavedTheme();
   renderCurrentDate();
   renderCurrentYear();
   renderDailyContent();
+
   setActiveUser(activeUser);
-  loadDailyRecords();
+
+  try {
+    await loadProfileIds();
+    await loadDailyRecords();
+  } catch (error) {
+    console.error(
+      "Supabase günlük kayıt sistemi başlatılamadı:",
+      error
+    );
+
+    showToast(
+      "Günlük kayıtlar veritabanından yüklenemedi."
+    );
+  }
+
   loadDailyContentActions();
   loadMutualPrayers();
   loadSharedPrayers();
   loadDailyNote();
+
   updateAllProgress();
   calculateMonthlyStatistics();
   calculateSharedStreak();
   updateGarden();
   updateBadges();
   renderCalendar();
+
   bindEvents();
 }
 
