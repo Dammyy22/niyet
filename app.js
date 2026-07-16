@@ -827,13 +827,13 @@ function formatReadableDate(
    GÜNLÜK İÇERİK
 ========================================================= */
 
-function renderDailyContent() {
+async function renderDailyContent() {
   const today = new Date();
 
   const dayNumber =
     getDayNumberOfYear(today);
 
-  const content =
+  const localContent =
     DAILY_CONTENT[
       dayNumber %
         DAILY_CONTENT.length
@@ -841,58 +841,132 @@ function renderDailyContent() {
 
   setText(
     "dailyEsmaName",
-    content.esma.name
+    localContent.esma.name
   );
 
   setText(
     "dailyEsmaArabic",
-    content.esma.arabic
+    localContent.esma.arabic
   );
 
   setText(
     "dailyEsmaMeaning",
-    content.esma.meaning
+    localContent.esma.meaning
   );
 
   setText(
     "dailyEsmaCount",
-    content.esma.count
-  );
-
-  setText(
-    "dailyVerseSource",
-    content.verse.source
-  );
-
-  setText(
-    "dailyVerseArabic",
-    content.verse.arabic
-  );
-
-  setText(
-    "dailyVerseReading",
-    content.verse.reading
-  );
-
-  setText(
-    "dailyVerseTranslation",
-    `“${content.verse.translation}”`
-  );
-
-  setText(
-    "dailyVerseTafsir",
-    content.verse.tafsir
+    localContent.esma.count
   );
 
   setText(
     "dailyPrayerText",
-    content.prayer
+    localContent.prayer
   );
 
   setText(
     "dailyChallengeText",
-    content.challenge
+    localContent.challenge
   );
+
+  setText(
+    "dailyVerseSource",
+    "Ayet yükleniyor..."
+  );
+
+  setText(
+    "dailyVerseArabic",
+    "..."
+  );
+
+  setText(
+    "dailyVerseReading",
+    ""
+  );
+
+  setText(
+    "dailyVerseTranslation",
+    "Elmalılı Hamdi Yazır meali yükleniyor..."
+  );
+
+  setText(
+    "dailyVerseTafsir",
+    ""
+  );
+
+  try {
+    if (
+      !window.niyetQuran
+        ?.loadDailyAyah
+    ) {
+      throw new Error(
+        "Kur'an içerik dosyası yüklenemedi."
+      );
+    }
+
+    const ayah =
+      await window.niyetQuran
+        .loadDailyAyah();
+
+    setText(
+      "dailyVerseSource",
+      `${ayah.surahName} Suresi, ${ayah.ayahNumber}`
+    );
+
+    setText(
+      "dailyVerseArabic",
+      ayah.arabicText
+    );
+
+    setText(
+      "dailyVerseReading",
+      `${ayah.surahArabicName} · ${ayah.reference}`
+    );
+
+    setText(
+      "dailyVerseTranslation",
+      `“${ayah.translation}”`
+    );
+
+    setText(
+      "dailyVerseTafsir",
+      `Meal: ${ayah.translationSource} · Veri kaynağı: ${ayah.apiSource}`
+    );
+  } catch (error) {
+    console.error(
+      "Günlük ayet yüklenemedi:",
+      error
+    );
+
+    /*
+      İnternet veya API sorunu olursa
+      eski yerel içerik gösterilir.
+    */
+    setText(
+      "dailyVerseSource",
+      localContent.verse.source
+    );
+
+    setText(
+      "dailyVerseArabic",
+      localContent.verse.arabic
+    );
+
+    setText(
+      "dailyVerseReading",
+      localContent.verse.reading
+    );
+
+    setText(
+      "dailyVerseTranslation",
+      `“${localContent.verse.translation}”`
+    );
+
+    setText(
+      "dailyVerseTafsir",
+      "Ayet kaynağına şu anda ulaşılamadığı için kayıtlı içerik gösteriliyor."
+    );
+  }
 }
 
 function getDayNumberOfYear(date) {
