@@ -192,43 +192,98 @@
           </button>
         </article>
 
-        <!-- Günün Ayeti -->
-        <article class="content-card verse-card">
-          <div class="content-card-header">
-            <div class="content-icon" aria-hidden="true">📖</div>
+       <!-- Günün Suresi -->
+<article class="content-card verse-card surah-card">
+  <div class="content-card-header">
+    <div class="content-icon" aria-hidden="true">📖</div>
 
-            <div>
-              <span class="content-label">Günün Ayeti</span>
-              <h3 id="dailyVerseSource">Ra'd Suresi, 28</h3>
-            </div>
-          </div>
+    <div>
+      <span class="content-label">Günün Suresi</span>
 
-          <div class="content-card-body">
-            <p class="arabic-text verse-arabic" id="dailyVerseArabic" lang="ar">
-              أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ
-            </p>
+      <h3 id="dailySurahName">
+        Sure yükleniyor...
+      </h3>
 
-            <p class="verse-reading" id="dailyVerseReading">
-              Elâ bi zikrillâhi tatmainnul kulûb.
-            </p>
+      <p class="surah-meta" id="dailySurahMeta">
+        Sure bilgileri hazırlanıyor...
+      </p>
+    </div>
+  </div>
 
-            <blockquote id="dailyVerseTranslation">
-              “Bilesiniz ki kalpler ancak Allah'ı anmakla huzur bulur.”
-            </blockquote>
+  <div class="content-card-body">
+    <p
+      class="surah-loading-message"
+      id="dailySurahLoadingMessage"
+    >
+      Elmalılı Hamdi Yazır meali yükleniyor...
+    </p>
 
-            <details class="tafsir-details">
-              <summary>Kısa tefsiri oku</summary>
+    <!-- Türkçe meal -->
+    <details
+      class="tafsir-details surah-details"
+      id="dailySurahTranslationDetails"
+    >
+      <summary>
+        Türkçe mealin tamamını oku
+      </summary>
 
-              <p id="dailyVerseTafsir">
-                İnsan kalbi yalnızca maddi imkânlarla tam anlamıyla huzura
-                kavuşmaz. Allah'ı hatırlamak, O'na güvenmek ve hayatın her
-                anında O'nun yakınlığını hissetmek kalbe gerçek bir sükûnet
-                kazandırır.
-              </p>
-            </details>
-          </div>
-        </article>
+      <div
+        class="surah-verses surah-translation-list"
+        id="dailySurahTranslation"
+      >
+        <!-- quran.js tarafından doldurulacak -->
+      </div>
+    </details>
 
+    <!-- Arapça metin -->
+    <details
+      class="tafsir-details surah-details"
+      id="dailySurahArabicDetails"
+    >
+      <summary>
+        Arapça metni oku
+      </summary>
+
+      <div
+        class="surah-verses surah-arabic-list"
+        id="dailySurahArabic"
+        lang="ar"
+        dir="rtl"
+      >
+        <!-- quran.js tarafından doldurulacak -->
+      </div>
+    </details>
+
+    <!-- Kısa tefsir -->
+    <details
+      class="tafsir-details surah-details"
+      id="dailySurahTafsirDetails"
+    >
+      <summary>
+        Kısa tefsiri oku
+      </summary>
+
+      <div class="surah-tafsir-content">
+        <p id="dailySurahTafsir">
+          Sure açıklaması hazırlanıyor...
+        </p>
+
+        <p
+          class="surah-source-note"
+          id="dailySurahTafsirSource"
+        ></p>
+      </div>
+    </details>
+
+    <div class="content-meta surah-source-meta">
+      <span>Meal kaynağı</span>
+
+      <strong id="dailySurahTranslationSource">
+        Elmalılı Hamdi Yazır
+      </strong>
+    </div>
+  </div>
+</article>
         <!-- Günün Duası -->
         <article class="content-card prayer-content-card">
           <div class="content-card-header">
