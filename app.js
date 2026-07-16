@@ -210,6 +210,8 @@ let activeUser = getStoredActiveUser();
 let calendarDate = new Date();
 let toastTimer = null;
 
+let dailyRecordsCache = {};
+let profileIds = {};
 /* =========================================================
    SAYFA BAŞLANGICI
 ========================================================= */
