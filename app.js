@@ -936,12 +936,12 @@ try {
         : "Tür: Genel dua";
   }
 }
-await function renderDailyContent() {
+async function renderDailyContent() {
   const today =
     new Date();
 
   const dayNumber =
-    getDayNumberOfYear(today);
+    NumberOfYear(today);
 
   const localContent =
     DAILY_CONTENT[
@@ -953,23 +953,47 @@ await function renderDailyContent() {
     Esma, dua ve küçük iyilik
     eski sistemden devam ediyor.
   */
+try {
+  await loadDailyEsma();
+} catch (error) {
+  console.error(
+    "Günün Esması yüklenemedi:",
+    error
+  );
+
+try {
+  await loadDailyEsma();
+} catch (error) {
+  console.error(
+    "Günün Esması yüklenemedi:",
+    error
+  );
+
   setText(
     "dailyEsmaName",
-    localContent.esma.name
+    "Günün Esması"
   );
 
   setText(
     "dailyEsmaArabic",
-    localContent.esma.arabic
+    "—"
   );
 
   setText(
     "dailyEsmaMeaning",
-    localContent.esma.meaning
+    error.message
   );
 
   setText(
     "dailyEsmaCount",
+    "—"
+  );
+
+  setText(
+    "dailyEsmaCountNote",
+    "Supabase kaydı kontrol edilmeli."
+  );
+}
     localContent.esma.count
   );
 try {
@@ -1184,6 +1208,271 @@ function getDayNumberOfYear(date) {
     difference / oneDay
   );
 }
+async function loadDailyEsma() {
+  /*
+    Esma sırası 16 Temmuz 2026 tarihinde başlıyor.
+
+    16 Temmuz = 1. Esma
+    17 Temmuz = 2. Esma
+    18 Temmuz = 3. Esma
+  */
+  const startDate =
+    new Date(2026, 6, 16);
+
+  const today =
+    new Date();
+
+  const normalizedToday =
+    new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+  const normalizedStartDate =
+    new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+
+  const oneDay =
+    1000 * 60 * 60 * 24;
+
+  const passedDayCount =
+    Math.floor(
+      (
+        normalizedToday -
+        normalizedStartDate
+      ) / oneDay
+    );
+
+  /*
+    İlk gün display_order = 1 olmalı.
+  */
+  const requestedOrder =
+    passedDayCount + 1;
+
+  if (requestedOrder < 1) {
+    throw new Error(
+      "Esma başlangıç tarihi henüz gelmedi."
+    );
+  }
+
+  const { data, error } =
+    await window.niyetSupabase
+      .from("divine_names")
+      .select(`
+        display_order,
+        name_latin,
+        name_arabic,
+        transliteration,
+        short_meaning,
+        detailed_meaning,
+        divine_attributes,
+        quran_context,
+        quran_references,
+        human_reflection,
+        deficiency_effect,
+        excess_effect,
+        spiritual_topics,
+        traditional_benefits,
+        traditional_count,
+        repetition_basis,
+        repetition_note,
+        recommended_method,
+        suggested_time,
+        prayer_example,
+        contemplation_question,
+        tdv_source,
+        diyanet_source,
+        ghazali_source,
+        elmalili_source,
+        traditional_source
+      `)
+      .eq("display_order", requestedOrder)
+      .eq("is_active", true)
+      .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      `${requestedOrder}. Esma henüz veritabanına eklenmedi.`
+    );
+  }
+
+  renderDailyEsma(data);
+
+  return data;
+}
+function renderDailyEsma(esma) {
+  setText(
+    "dailyEsmaName",
+    esma.name_latin || "Günün Esması"
+  );
+
+  setText(
+    "dailyEsmaArabic",
+    esma.name_arabic || "—"
+  );
+
+  setText(
+    "dailyEsmaTransliteration",
+    esma.transliteration || ""
+  );
+
+  setText(
+    "dailyEsmaMeaning",
+    esma.short_meaning || "—"
+  );
+
+  setText(
+    "dailyEsmaShortMeaning",
+    esma.short_meaning || "—"
+  );
+
+  setText(
+    "dailyEsmaDetailedMeaning",
+    esma.detailed_meaning || "—"
+  );
+
+  setText(
+    "dailyEsmaAttributes",
+    esma.divine_attributes || "—"
+  );
+
+  setText(
+    "dailyEsmaQuranContext",
+    esma.quran_context || "—"
+  );
+
+  setText(
+    "dailyEsmaHumanReflection",
+    esma.human_reflection || "—"
+  );
+
+  setText(
+    "dailyEsmaDeficiency",
+    esma.deficiency_effect || "—"
+  );
+
+  setText(
+    "dailyEsmaExcess",
+    esma.excess_effect || "—"
+  );
+
+  setText(
+    "dailyEsmaTraditionalBenefits",
+    esma.traditional_benefits || "—"
+  );
+
+  setText(
+    "dailyEsmaMethod",
+    esma.recommended_method || "—"
+  );
+
+  setText(
+    "dailyEsmaSuggestedTime",
+    esma.suggested_time || "—"
+  );
+
+  setText(
+    "dailyEsmaPrayer",
+    esma.prayer_example || "—"
+  );
+
+  setText(
+    "dailyEsmaContemplation",
+    esma.contemplation_question || "—"
+  );
+
+  setText(
+    "dailyEsmaTdvSource",
+    esma.tdv_source || "—"
+  );
+
+  setText(
+    "dailyEsmaDiyanetSource",
+    esma.diyanet_source || "—"
+  );
+
+  setText(
+    "dailyEsmaGhazaliSource",
+    esma.ghazali_source || "—"
+  );
+
+  setText(
+    "dailyEsmaElmaliliSource",
+    esma.elmalili_source || "—"
+  );
+
+  setText(
+    "dailyEsmaTraditionalSource",
+    esma.traditional_source || "—"
+  );
+
+  const traditionalCount =
+    Number(esma.traditional_count);
+
+  setText(
+    "dailyEsmaCount",
+    Number.isFinite(traditionalCount)
+      ? `${traditionalCount} defa`
+      : "Belirli sayı yok"
+  );
+
+  setText(
+    "dailyEsmaCountNote",
+    esma.repetition_note ||
+      "Geleneksel tekrar bilgisi bulunmuyor."
+  );
+
+  renderEsmaTagList(
+    "dailyEsmaQuranReferences",
+    esma.quran_references
+  );
+
+  renderEsmaTagList(
+    "dailyEsmaTopics",
+    esma.spiritual_topics
+  );
+}
+function renderEsmaTagList(elementId, items) {
+  const container =
+    document.getElementById(elementId);
+
+  if (!container) {
+    return;
+  }
+
+  if (
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
+    container.innerHTML = `
+      <span class="esma-detail-tag">
+        Bilgi bulunmuyor
+      </span>
+    `;
+
+    return;
+  }
+
+  container.innerHTML =
+    items
+      .map(
+        item => `
+          <span class="esma-detail-tag">
+            ${escapeHtml(item)}
+          </span>
+        `
+      )
+      .join("");
+}
+
 async function loadDailyPrayer() {
   /*
     Dua sistemi 16 Temmuz 2026 tarihinde başlıyor.
