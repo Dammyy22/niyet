@@ -1,185 +1,86 @@
 "use strict";
 
 /* =========================================================
-   NİYET - KUR'AN İÇERİĞİ
-   Kaynak: Al Quran Cloud
-   Meal: Elmalılı Hamdi Yazır - tr.yazir
+   NİYET - GÜNÜN SURESİ
+   Arapça: quran-uthmani
+   Türkçe meal: Elmalılı Hamdi Yazır / tr.yazir
 ========================================================= */
 
 const NIYET_QURAN_API =
   "https://api.alquran.cloud/v1";
 
 /*
-  Günlük içerikte gösterilecek ayetler.
-
-  Bütün Kur'an'dan rastgele ayet seçmiyoruz.
-  Çünkü bazı ayetlerin anlaşılması için önceki ve sonraki
-  ayetlerin bağlamı gerekebilir.
-
-  Buradaki referanslar zamanla çoğaltılabilir.
+  1 Ocak 2026 tarihinde Fâtiha ile başlar.
+  Her gün sıradaki sure gösterilir.
+  114. sure sonrasında tekrar Fâtiha'ya döner.
 */
-const NIYET_DAILY_AYAH_REFERENCES = [
-  "2:152",
-  "2:153",
-  "2:186",
-  "2:286",
-  "3:8",
-  "3:26",
-  "3:31",
-  "3:92",
-  "3:103",
-  "3:134",
-  "3:139",
-  "3:159",
-  "3:173",
-  "5:8",
-  "5:35",
-  "7:23",
-  "7:56",
-  "8:2",
-  "8:46",
-  "9:40",
-  "9:51",
-  "9:71",
-  "10:57",
-  "10:62",
-  "10:107",
-  "11:6",
-  "11:88",
-  "12:87",
-  "13:11",
-  "13:28",
-  "13:29",
-  "14:7",
-  "14:40",
-  "15:49",
-  "16:18",
-  "16:90",
-  "16:97",
-  "17:23",
-  "17:24",
-  "17:70",
-  "18:10",
-  "18:46",
-  "20:25",
-  "20:26",
-  "20:114",
-  "21:83",
-  "21:87",
-  "21:89",
-  "22:40",
-  "23:1",
-  "23:8",
-  "24:22",
-  "24:35",
-  "25:63",
-  "25:74",
-  "26:80",
-  "27:19",
-  "28:24",
-  "28:77",
-  "29:45",
-  "29:69",
-  "30:21",
-  "30:60",
-  "31:17",
-  "31:18",
-  "33:21",
-  "33:35",
-  "33:41",
-  "33:56",
-  "35:15",
-  "39:9",
-  "39:10",
-  "39:53",
-  "40:44",
-  "40:60",
-  "41:30",
-  "41:34",
-  "42:38",
-  "48:4",
-  "49:10",
-  "49:12",
-  "50:16",
-  "51:56",
-  "53:39",
-  "55:13",
-  "57:4",
-  "57:20",
-  "57:23",
-  "59:18",
-  "59:21",
-  "64:15",
-  "65:2",
-  "65:3",
-  "65:7",
-  "66:8",
-  "67:2",
-  "68:4",
-  "73:8",
-  "89:27",
-  "89:28",
-  "93:3",
-  "93:5",
-  "93:11",
-  "94:5",
-  "94:6",
-  "94:7",
-  "94:8",
-  "97:1",
-  "103:1",
-  "103:2",
-  "103:3",
-  "108:1",
-  "112:1"
-];
+const NIYET_SURAH_START_DATE =
+  new Date(2026, 0, 1);
 
-function getNiyetDayNumber(date = new Date()) {
-  const start =
+function getNiyetDayDifference(
+  date = new Date()
+) {
+  const currentDate =
     new Date(
       date.getFullYear(),
-      0,
-      0
+      date.getMonth(),
+      date.getDate()
     );
 
-  const difference =
-    date - start;
+  const startDate =
+    new Date(
+      NIYET_SURAH_START_DATE.getFullYear(),
+      NIYET_SURAH_START_DATE.getMonth(),
+      NIYET_SURAH_START_DATE.getDate()
+    );
+
+  const oneDay =
+    1000 * 60 * 60 * 24;
 
   return Math.floor(
-    difference /
-      (1000 * 60 * 60 * 24)
+    (
+      currentDate -
+      startDate
+    ) / oneDay
   );
 }
 
-function getNiyetDailyAyahReference() {
-  const dayNumber =
-    getNiyetDayNumber();
+function getNiyetDailySurahNumber() {
+  const dayDifference =
+    getNiyetDayDifference();
 
-  const index =
-    dayNumber %
-    NIYET_DAILY_AYAH_REFERENCES.length;
+  /*
+    Tarih başlangıçtan önce olsa bile
+    sonucu 1-114 arasında tutar.
+  */
+  const normalizedIndex =
+    (
+      (
+        dayDifference %
+        114
+      ) +
+      114
+    ) %
+    114;
 
-  return NIYET_DAILY_AYAH_REFERENCES[
-    index
-  ];
+  return normalizedIndex + 1;
 }
 
-async function fetchQuranEdition(
-  reference,
+async function fetchSurahEdition(
+  surahNumber,
   edition
 ) {
+  const url =
+    `${NIYET_QURAN_API}/surah/` +
+    `${surahNumber}/` +
+    `${encodeURIComponent(edition)}`;
+
   const response =
-    await fetch(
-      `${NIYET_QURAN_API}/ayah/${encodeURIComponent(
-        reference
-      )}/${encodeURIComponent(
-        edition
-      )}`
-    );
+    await fetch(url);
 
   if (!response.ok) {
     throw new Error(
-      `Kur'an API isteği başarısız oldu: ${response.status}`
+      `Kur'an servisi hata verdi: ${response.status}`
     );
   }
 
@@ -192,65 +93,226 @@ async function fetchQuranEdition(
   ) {
     throw new Error(
       result.status ||
-      "Ayet verisi alınamadı."
+      "Sure verisi alınamadı."
     );
   }
 
   return result.data;
 }
 
-async function loadNiyetDailyAyah() {
-  const reference =
-    getNiyetDailyAyahReference();
+async function loadNiyetDailySurah() {
+  const surahNumber =
+    getNiyetDailySurahNumber();
 
   const [
-    arabicAyah,
-    elmaliliAyah
+    arabicSurah,
+    translationSurah
   ] = await Promise.all([
-    fetchQuranEdition(
-      reference,
+    fetchSurahEdition(
+      surahNumber,
       "quran-uthmani"
     ),
 
-    fetchQuranEdition(
-      reference,
+    fetchSurahEdition(
+      surahNumber,
       "tr.yazir"
     )
   ]);
 
   return {
-    reference,
+    number:
+      arabicSurah.number,
 
-    surahNumber:
-      arabicAyah.surah.number,
+    name:
+      arabicSurah.englishName,
 
-    surahName:
-      arabicAyah.surah.englishName,
+    turkishName:
+      getTurkishSurahName(
+        arabicSurah.number
+      ),
 
-    surahArabicName:
-      arabicAyah.surah.name,
+    arabicName:
+      arabicSurah.name,
 
-    ayahNumber:
-      arabicAyah.numberInSurah,
+    ayahCount:
+      arabicSurah.numberOfAyahs,
 
-    arabicText:
-      arabicAyah.text,
+    revelationType:
+      arabicSurah.revelationType,
 
-    translation:
-      elmaliliAyah.text,
+    arabicAyahs:
+      arabicSurah.ayahs.map(
+        ayah => ({
+          number:
+            ayah.numberInSurah,
+
+          text:
+            ayah.text
+        })
+      ),
+
+    translationAyahs:
+      translationSurah.ayahs.map(
+        ayah => ({
+          number:
+            ayah.numberInSurah,
+
+          text:
+            ayah.text
+        })
+      ),
 
     translationSource:
       "Elmalılı Hamdi Yazır",
 
-    apiSource:
+    dataSource:
       "Al Quran Cloud"
   };
 }
 
-window.niyetQuran = {
-  loadDailyAyah:
-    loadNiyetDailyAyah,
+function getTurkishSurahName(
+  surahNumber
+) {
+  const names = [
+    "Fâtiha",
+    "Bakara",
+    "Âl-i İmrân",
+    "Nisâ",
+    "Mâide",
+    "En‘âm",
+    "A‘râf",
+    "Enfâl",
+    "Tevbe",
+    "Yûnus",
+    "Hûd",
+    "Yûsuf",
+    "Ra‘d",
+    "İbrâhim",
+    "Hicr",
+    "Nahl",
+    "İsrâ",
+    "Kehf",
+    "Meryem",
+    "Tâhâ",
+    "Enbiyâ",
+    "Hac",
+    "Mü’minûn",
+    "Nûr",
+    "Furkân",
+    "Şuarâ",
+    "Neml",
+    "Kasas",
+    "Ankebût",
+    "Rûm",
+    "Lokmân",
+    "Secde",
+    "Ahzâb",
+    "Sebe’",
+    "Fâtır",
+    "Yâsîn",
+    "Sâffât",
+    "Sâd",
+    "Zümer",
+    "Mü’min",
+    "Fussilet",
+    "Şûrâ",
+    "Zuhruf",
+    "Duhân",
+    "Câsiye",
+    "Ahkâf",
+    "Muhammed",
+    "Fetih",
+    "Hucurât",
+    "Kâf",
+    "Zâriyât",
+    "Tûr",
+    "Necm",
+    "Kamer",
+    "Rahmân",
+    "Vâkıa",
+    "Hadîd",
+    "Mücâdele",
+    "Haşr",
+    "Mümtehine",
+    "Saf",
+    "Cuma",
+    "Münâfikûn",
+    "Tegâbün",
+    "Talâk",
+    "Tahrîm",
+    "Mülk",
+    "Kalem",
+    "Hâkka",
+    "Meâric",
+    "Nûh",
+    "Cin",
+    "Müzzemmil",
+    "Müddessir",
+    "Kıyâmet",
+    "İnsan",
+    "Mürselât",
+    "Nebe’",
+    "Nâziât",
+    "Abese",
+    "Tekvîr",
+    "İnfitâr",
+    "Mutaffifîn",
+    "İnşikâk",
+    "Bürûc",
+    "Târık",
+    "A‘lâ",
+    "Gâşiye",
+    "Fecr",
+    "Beled",
+    "Şems",
+    "Leyl",
+    "Duhâ",
+    "İnşirâh",
+    "Tîn",
+    "Alak",
+    "Kadir",
+    "Beyyine",
+    "Zilzâl",
+    "Âdiyât",
+    "Kâria",
+    "Tekâsür",
+    "Asr",
+    "Hümeze",
+    "Fîl",
+    "Kureyş",
+    "Mâûn",
+    "Kevser",
+    "Kâfirûn",
+    "Nasr",
+    "Tebbet",
+    "İhlâs",
+    "Felak",
+    "Nâs"
+  ];
 
-  getDailyReference:
-    getNiyetDailyAyahReference
+  return (
+    names[
+      surahNumber - 1
+    ] ||
+    `Sure ${surahNumber}`
+  );
+}
+
+function getRevelationTypeText(
+  revelationType
+) {
+  return revelationType ===
+    "Meccan"
+    ? "Mekke döneminde inmiştir"
+    : "Medine döneminde inmiştir";
+}
+
+window.niyetQuran = {
+  loadDailySurah:
+    loadNiyetDailySurah,
+
+  getDailySurahNumber:
+    getNiyetDailySurahNumber,
+
+  getRevelationTypeText
 };
