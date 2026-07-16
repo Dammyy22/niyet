@@ -17,7 +17,7 @@
 
   <title>Niyet | Birlikte İstikrar</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 
 <body>
@@ -155,331 +155,122 @@
       </div>
 
       <div class="daily-content-grid">
-<!-- Günün Esması -->
-<article class="content-card esma-card">
-  <div class="content-card-header">
-    <div class="content-icon" aria-hidden="true">🌿</div>
 
-    <div>
-      <span class="content-label">Günün Esması</span>
-
-      <h3 id="dailyEsmaName">
-        Esma yükleniyor...
-      </h3>
-
-      <small id="dailyEsmaTransliteration">
-        Günlük Esma hazırlanıyor
-      </small>
-    </div>
-  </div>
-
-  <div class="content-card-body">
-    <p
-      class="arabic-text"
-      id="dailyEsmaArabic"
-      lang="ar"
-    >
-      —
-    </p>
-
-    <p
-      class="content-meaning"
-      id="dailyEsmaMeaning"
-    >
-      Esmanın anlamı hazırlanıyor...
-    </p>
-
-    <div class="content-meta">
-      <span>Geleneksel tekrar</span>
-
-      <strong id="dailyEsmaCount">
-        —
-      </strong>
-    </div>
-
-    <p
-      class="gentle-note"
-      id="dailyEsmaCountNote"
-    >
-      Tekrar bilgisi hazırlanıyor...
-    </p>
-
-    <details class="tafsir-details esma-details">
-      <summary>
-        Esmayı ayrıntılı incele
-      </summary>
-
-      <div class="esma-detail-content">
-
-        <section class="esma-detail-section">
-          <h4>Kısa anlamı</h4>
-          <p id="dailyEsmaShortMeaning">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Detaylı anlamı</h4>
-          <p id="dailyEsmaDetailedMeaning">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Bildirdiği ilahî sıfatlar</h4>
-          <p id="dailyEsmaAttributes">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Kur’an’daki bağlamı</h4>
-          <p id="dailyEsmaQuranContext">
-            —
-          </p>
-
-          <div
-            class="esma-reference-list"
-            id="dailyEsmaQuranReferences"
-          ></div>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>İnsandaki güzel yansıması</h4>
-          <p id="dailyEsmaHumanReflection">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Bu yönün eksikliğinde</h4>
-          <p id="dailyEsmaDeficiency">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Dengenin bozulması hâlinde</h4>
-          <p id="dailyEsmaExcess">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Hangi konularda okunabilir?</h4>
-
-          <div
-            class="esma-topic-list"
-            id="dailyEsmaTopics"
-          ></div>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Geleneksel kullanım alanı</h4>
-          <p id="dailyEsmaTraditionalBenefits">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Okuma biçimi</h4>
-          <p id="dailyEsmaMethod">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Önerilen zaman</h4>
-          <p id="dailyEsmaSuggestedTime">
-            —
-          </p>
-        </section>
-
-        <section class="esma-detail-section esma-prayer-section">
-          <h4>Bu Esma ile dua</h4>
-
-          <blockquote id="dailyEsmaPrayer">
-            —
-          </blockquote>
-        </section>
-
-        <section class="esma-detail-section">
-          <h4>Bugünün tefekkürü</h4>
-
-          <p id="dailyEsmaContemplation">
-            —
-          </p>
-        </section>
-
-        <details class="esma-source-details">
-          <summary>Kaynakları göster</summary>
-
-          <div class="esma-sources">
-            <p>
-              <strong>TDV:</strong>
-              <span id="dailyEsmaTdvSource">—</span>
-            </p>
-
-            <p>
-              <strong>Diyanet:</strong>
-              <span id="dailyEsmaDiyanetSource">—</span>
-            </p>
-
-            <p>
-              <strong>Gazzâlî:</strong>
-              <span id="dailyEsmaGhazaliSource">—</span>
-            </p>
-
-            <p>
-              <strong>Elmalılı:</strong>
-              <span id="dailyEsmaElmaliliSource">—</span>
-            </p>
-
-            <p>
-              <strong>Geleneksel kaynak:</strong>
-              <span id="dailyEsmaTraditionalSource">—</span>
-            </p>
-          </div>
-        </details>
-
-      </div>
-    </details>
-  </div>
-
-  <button
-    type="button"
-    class="soft-button"
-    id="markEsmaCompleteButton"
-  >
-    <span aria-hidden="true">✓</span>
-    Okudum
-  </button>
-</article>
-       
-
-       <!-- Günün Suresi -->
-<article class="content-card verse-card surah-card">
-  <div class="content-card-header">
-    <div class="content-icon" aria-hidden="true">📖</div>
-
-    <div>
-      <span class="content-label">Günün Suresi</span>
-
-      <h3 id="dailySurahName">
-        Sure yükleniyor...
-      </h3>
-
-      <p class="surah-meta" id="dailySurahMeta">
-        Sure bilgileri hazırlanıyor...
-      </p>
-    </div>
-  </div>
-
-  <div class="content-card-body">
-    <p
-      class="surah-loading-message"
-      id="dailySurahLoadingMessage"
-    >
-      Elmalılı Hamdi Yazır meali yükleniyor...
-    </p>
-
-    <!-- Türkçe meal -->
-    <details
-      class="tafsir-details surah-details"
-      id="dailySurahTranslationDetails"
-    >
-      <summary>
-        Türkçe mealin tamamını oku
-      </summary>
-
-      <div
-        class="surah-verses surah-translation-list"
-        id="dailySurahTranslation"
-      >
-        <!-- quran.js tarafından doldurulacak -->
-      </div>
-    </details>
-
-    <!-- Arapça metin -->
-    <details
-      class="tafsir-details surah-details"
-      id="dailySurahArabicDetails"
-    >
-      <summary>
-        Arapça metni oku
-      </summary>
-
-      <div
-        class="surah-verses surah-arabic-list"
-        id="dailySurahArabic"
-        lang="ar"
-        dir="rtl"
-      >
-        <!-- quran.js tarafından doldurulacak -->
-      </div>
-    </details>
-
-    <!-- Kısa tefsir -->
-    <details
-      class="tafsir-details surah-details"
-      id="dailySurahTafsirDetails"
-    >
-      <summary>
-        Kısa tefsiri oku
-      </summary>
-
-      <div class="surah-tafsir-content">
-        <p id="dailySurahTafsir">
-          Sure açıklaması hazırlanıyor...
-        </p>
-
-        <p
-          class="surah-source-note"
-          id="dailySurahTafsirSource"
-        ></p>
-      </div>
-    </details>
-
-    <div class="content-meta surah-source-meta">
-      <span>Meal kaynağı</span>
-
-      <strong id="dailySurahTranslationSource">
-        Elmalılı Hamdi Yazır
-      </strong>
-    </div>
-  </div>
-</article>
-        <!-- Günün Duası -->
-        <article class="content-card prayer-content-card">
+        <!-- Günün Esması -->
+        <article class="content-card esma-card">
           <div class="content-card-header">
-            <div class="content-icon" aria-hidden="true">🤲</div>
-
+            <div class="content-icon" aria-hidden="true">🌿</div>
             <div>
-              <span class="content-label">Günün Duası</span>
-              <h3 id="dailyPrayerTitle">
-  Dua yükleniyor...
-</h3>
-              <p
-  class="surah-source-note"
-  id="dailyPrayerSource"
->
-  Dua kaynağı hazırlanıyor...
-</p>
+              <span class="content-label">Günün Esması</span>
+              <h3 id="dailyEsmaName">Esma yükleniyor...</h3>
+              <small id="dailyEsmaTransliteration">Günlük Esma hazırlanıyor...</small>
             </div>
           </div>
 
           <div class="content-card-body">
-            <p class="daily-prayer-text" id="dailyPrayerText">
-              Allah'ım, kalbimize huzur, niyetlerimize samimiyet ve
-              adımlarımıza istikrar nasip et.
-            </p>
+            <p class="arabic-text" id="dailyEsmaArabic" lang="ar">—</p>
+            <p class="content-meaning" id="dailyEsmaMeaning">Esmanın anlamı hazırlanıyor...</p>
+
+            <div class="content-meta">
+              <span>Geleneksel tekrar</span>
+              <strong id="dailyEsmaCount">—</strong>
+            </div>
+
+            <p class="gentle-note" id="dailyEsmaCountNote">Tekrar bilgisi hazırlanıyor...</p>
+
+            <details class="tafsir-details esma-details">
+              <summary>Esmayı ayrıntılı incele</summary>
+              <div class="esma-detail-content">
+                <section class="esma-detail-section"><h4>Kısa anlamı</h4><p id="dailyEsmaShortMeaning">—</p></section>
+                <section class="esma-detail-section"><h4>Detaylı anlamı</h4><p id="dailyEsmaDetailedMeaning">—</p></section>
+                <section class="esma-detail-section"><h4>Bildirdiği ilahî sıfatlar</h4><p id="dailyEsmaAttributes">—</p></section>
+                <section class="esma-detail-section">
+                  <h4>Kur’an’daki bağlamı</h4>
+                  <p id="dailyEsmaQuranContext">—</p>
+                  <div class="esma-reference-list" id="dailyEsmaQuranReferences"></div>
+                </section>
+                <section class="esma-detail-section"><h4>İnsandaki güzel yansıması</h4><p id="dailyEsmaHumanReflection">—</p></section>
+                <section class="esma-detail-section"><h4>Bu yönün eksikliğinde</h4><p id="dailyEsmaDeficiency">—</p></section>
+                <section class="esma-detail-section"><h4>Dengenin bozulması hâlinde</h4><p id="dailyEsmaExcess">—</p></section>
+                <section class="esma-detail-section">
+                  <h4>Hangi konularda okunabilir?</h4>
+                  <div class="esma-topic-list" id="dailyEsmaTopics"></div>
+                </section>
+                <section class="esma-detail-section"><h4>Geleneksel kullanım alanı</h4><p id="dailyEsmaTraditionalBenefits">—</p></section>
+                <section class="esma-detail-section"><h4>Okuma biçimi</h4><p id="dailyEsmaMethod">—</p></section>
+                <section class="esma-detail-section"><h4>Önerilen zaman</h4><p id="dailyEsmaSuggestedTime">—</p></section>
+                <section class="esma-detail-section esma-prayer-section"><h4>Bu Esma ile dua</h4><blockquote id="dailyEsmaPrayer">—</blockquote></section>
+                <section class="esma-detail-section"><h4>Bugünün tefekkürü</h4><p id="dailyEsmaContemplation">—</p></section>
+
+                <details class="esma-source-details">
+                  <summary>Kaynakları göster</summary>
+                  <div class="esma-sources">
+                    <p><strong>TDV:</strong> <span id="dailyEsmaTdvSource">—</span></p>
+                    <p><strong>Diyanet:</strong> <span id="dailyEsmaDiyanetSource">—</span></p>
+                    <p><strong>Gazzâlî:</strong> <span id="dailyEsmaGhazaliSource">—</span></p>
+                    <p><strong>Elmalılı:</strong> <span id="dailyEsmaElmaliliSource">—</span></p>
+                    <p><strong>Geleneksel kaynak:</strong> <span id="dailyEsmaTraditionalSource">—</span></p>
+                  </div>
+                </details>
+              </div>
+            </details>
           </div>
 
-          <button
-            type="button"
-            class="soft-button"
-            id="dailyPrayerAmenButton"
-          >
+          <button type="button" class="soft-button" id="markEsmaCompleteButton">
+            <span aria-hidden="true">✓</span>
+            Okudum
+          </button>
+        </article>
+
+        <!-- Günün Suresi -->
+        <article class="content-card verse-card surah-card">
+          <div class="content-card-header">
+            <div class="content-icon" aria-hidden="true">📖</div>
+            <div>
+              <span class="content-label">Günün Suresi</span>
+              <h3 id="dailySurahName">Sure yükleniyor...</h3>
+              <small id="dailySurahMeta">Kur’an verisi hazırlanıyor...</small>
+            </div>
+          </div>
+
+          <div class="content-card-body">
+            <p class="gentle-note" id="dailySurahLoadingMessage">Sure hazırlanıyor...</p>
+
+            <details class="tafsir-details" id="dailySurahTranslationDetails">
+              <summary>Türkçe mealin tamamını oku</summary>
+              <div class="surah-text-list" id="dailySurahTranslation"></div>
+              <p class="gentle-note" id="dailySurahTranslationSource"></p>
+            </details>
+
+            <details class="tafsir-details" id="dailySurahArabicDetails">
+              <summary>Arapça metni oku</summary>
+              <div class="surah-text-list arabic-surah-list" id="dailySurahArabic" lang="ar"></div>
+            </details>
+
+            <details class="tafsir-details" id="dailySurahTafsirDetails">
+              <summary>Kısa tefsiri oku</summary>
+              <p id="dailySurahTafsir">Sure açıklaması hazırlanıyor...</p>
+              <p class="gentle-note" id="dailySurahTafsirSource">Kısa tefsir kaynağı hazırlanıyor.</p>
+            </details>
+          </div>
+        </article>
+
+        <!-- Günün Duası -->
+        <article class="content-card prayer-content-card">
+          <div class="content-card-header">
+            <div class="content-icon" aria-hidden="true">🤲</div>
+            <div>
+              <span class="content-label">Günün Duası</span>
+              <h3 id="dailyPrayerTitle">Dua yükleniyor...</h3>
+            </div>
+          </div>
+
+          <div class="content-card-body">
+            <p class="daily-prayer-text" id="dailyPrayerText">Günün duası hazırlanıyor...</p>
+            <p class="gentle-note" id="dailyPrayerSource">Dua kaynağı hazırlanıyor...</p>
+          </div>
+
+          <button type="button" class="soft-button" id="dailyPrayerAmenButton">
             <span aria-hidden="true">🤍</span>
             Âmin
           </button>
@@ -1478,45 +1269,19 @@
     </div>
   </noscript>
 
- <!-- Supabase tarayıcı kütüphanesi -->
-<script
-  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-></script>
+  <!-- Supabase tarayıcı kütüphanesi -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Supabase bağlantısı -->
-<script
-  src="./functions/supabase.js?v=1"
-></script>
+  <!-- Supabase bağlantısı -->
+  <script src="./functions/supabase.js?v=2"></script>
 
-<!-- Ana sayfa oturum kontrolü -->
-<script
-  src="./functions/auth.js?v=1"
-></script>
+  <!-- Oturum kontrolü -->
+  <script src="./functions/auth.js?v=2"></script>
 
-<!-- Mevcut uygulama kodu -->
-<script
-  src="./app.js?v=1"
-  defer
-></script>
-</body>
-src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-></script>
+  <!-- Kur’an verisi -->
+  <script src="./functions/quran.js?v=4"></script>
 
-<script
-  src="./functions/supabase.js?v=1"
-></script>
-
-<script
-  src="./functions/auth.js?v=1"
-></script>
-
-<script
-  src="./functions/quran.js?v=3"
-></script>
-
-<script
-  src="./app.js?v=15"
-  defer
-></script>
+  <!-- Ana uygulama -->
+  <script src="./app.js?v=22" defer></script>
 </body>
 </html>
