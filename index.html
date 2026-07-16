@@ -1,241 +1,1251 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Niyet</title>
+  <meta charset="UTF-8">
 
-    <link rel="stylesheet" href="style.css">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <meta
+    name="description"
+    content="Niyet, Damla ve Hilal'in manevi gelişimlerini birlikte ve huzurla takip edebilecekleri ortak web uygulamasıdır."
+  >
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#11130f">
 
+  <title>Niyet | Birlikte İstikrar</title>
+
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="background"></div>
-
-<header>
-
-    <h1>🤍 NİYET</h1>
-
-    <p>Damla & Hilal</p>
-
-</header>
-
-<main>
-
-<section class="today-card">
-
-<h2>📅 Bugün</h2>
-
-<h3 id="todayDate">16 Temmuz 2026</h3>
-
-</section>
-
-<section class="daily-content">
-
-<div class="card">
-
-<h2>🌿 Günün Esması</h2>
-
-<h3 id="esmaName">El-Vedûd</h3>
-
-<p id="esmaMeaning">
-Çok seven, kullarını seven.
-</p>
-
-<p>
-
-100 Defa
-
-</p>
-
-</div>
-
-<div class="card">
-
-<h2>📖 Günün Ayeti</h2>
-
-<p id="ayet">
-
-"...Allah sabredenlerle beraberdir."
-
-</p>
-
-</div>
-
-<div class="card">
-
-<h2>🤲 Günün Duası</h2>
-
-<p>
-
-Allah'ım bugün işlerimizi kolaylaştır.
-
-</p>
-
-</div>
-
-<div class="card">
-
-<h2>⭐ Günün Challenge'ı</h2>
-
-<p>
-
-Bugün bir kişiye tebessüm et.
-
-</p>
-
-</div>
-
-</section>
-
-<section class="users">
-
-<div class="user">
-
-<h2>🤍 Damla</h2>
-
-<div class="checklist">
-
-<label><input type="checkbox"> Sabah</label>
-
-<label><input type="checkbox"> Öğle</label>
-
-<label><input type="checkbox"> İkindi</label>
-
-<label><input type="checkbox"> Akşam</label>
-
-<label><input type="checkbox"> Yatsı</label>
-
-<hr>
-
-<label><input type="checkbox"> Esma</label>
-
-<label><input type="checkbox"> Kur'an</label>
-
-<label><input type="checkbox"> Tefsir</label>
-
-<label><input type="checkbox"> Dua</label>
-
-<label><input type="checkbox"> Tefekkür</label>
-
-</div>
-
-</div>
-
-<div class="user">
-
-<h2>🌸 Hilal</h2>
-
-<div class="checklist">
-
-<label><input type="checkbox"> Sabah</label>
-
-<label><input type="checkbox"> Öğle</label>
-
-<label><input type="checkbox"> İkindi</label>
-
-<label><input type="checkbox"> Akşam</label>
-
-<label><input type="checkbox"> Yatsı</label>
-
-<hr>
-
-<label><input type="checkbox"> Esma</label>
-
-<label><input type="checkbox"> Kur'an</label>
-
-<label><input type="checkbox"> Tefsir</label>
-
-<label><input type="checkbox"> Dua</label>
-
-<label><input type="checkbox"> Tefekkür</label>
-
-</div>
-
-</div>
-
-</section>
-
-<section class="dua">
-
-<h2>❤️ Birbirimize Dua Edelim</h2>
-
-<button id="duaButton">
-
-🤲 Bugün Dua Ettim
-
-</button>
-
-<p id="duaInfo">
-
-Henüz bugün dua edilmedi.
-
-</p>
-
-</section>
-
-<section class="stats">
-
-<h2>📊 İstatistik</h2>
-
-<div class="stat-grid">
-
-<div class="stat">
-
-<h3>🔥 Seri</h3>
-
-<p>0 Gün</p>
-
-</div>
-
-<div class="stat">
-
-<h3>📖 Kur'an</h3>
-
-<p>0</p>
-
-</div>
-
-<div class="stat">
-
-<h3>🌿 Esma</h3>
-
-<p>0</p>
-
-</div>
-
-<div class="stat">
-
-<h3>🕌 Namaz</h3>
-
-<p>0</p>
-
-</div>
-
-</div>
-
-</section>
-
-</main>
-
-<footer>
-
-<p>
-
-Allah katında amellerin en sevimlisi,
-az da olsa devamlı olanıdır.
-
-</p>
-
-</footer>
-
-<script src="app.js"></script>
-
+  <!-- Dekoratif arka plan -->
+  <div class="background-glow background-glow-one" aria-hidden="true"></div>
+  <div class="background-glow background-glow-two" aria-hidden="true"></div>
+
+  <!-- =====================================================
+       ÜST MENÜ
+  ====================================================== -->
+  <header class="topbar">
+    <a href="index.html" class="brand" aria-label="Niyet ana sayfa">
+      <span class="brand-icon" aria-hidden="true">🌙</span>
+
+      <span class="brand-text">
+        <strong>Niyet</strong>
+        <small>Birlikte, huzurla, istikrarla</small>
+      </span>
+    </a>
+
+    <div class="topbar-actions">
+      <button
+        type="button"
+        class="icon-button"
+        id="themeToggleButton"
+        aria-label="Temayı değiştir"
+        title="Temayı değiştir"
+      >
+        <span aria-hidden="true">☀️</span>
+      </button>
+
+      <button
+        type="button"
+        class="profile-button"
+        id="profileButton"
+        aria-label="Profil menüsünü aç"
+      >
+        <span class="profile-avatar" id="headerProfileAvatar">D</span>
+
+        <span class="profile-info">
+          <strong id="headerProfileName">Damla</strong>
+          <small>Bugün de buradasın 🌿</small>
+        </span>
+
+        <span class="profile-arrow" aria-hidden="true">⌄</span>
+      </button>
+    </div>
+
+    <!-- İleride giriş sistemiyle aktif kullanıcı buradan değişecek. -->
+    <div class="profile-menu hidden" id="profileMenu">
+      <p class="profile-menu-title">Aktif kullanıcı</p>
+
+      <button
+        type="button"
+        class="profile-menu-item active"
+        data-user-switch="damla"
+      >
+        <span class="mini-avatar">D</span>
+
+        <span>
+          <strong>Damla</strong>
+          <small>Kendi kayıtlarını görüntüle</small>
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="profile-menu-item"
+        data-user-switch="hilal"
+      >
+        <span class="mini-avatar">H</span>
+
+        <span>
+          <strong>Hilal</strong>
+          <small>Kendi kayıtlarını görüntüle</small>
+        </span>
+      </button>
+
+      <a href="login.html" class="profile-menu-link">
+        Giriş sayfasına git
+      </a>
+    </div>
+  </header>
+
+  <!-- =====================================================
+       ANA İÇERİK
+  ====================================================== -->
+  <main class="page-container">
+
+    <!-- ===================================================
+         KARŞILAMA ALANI
+    ==================================================== -->
+    <section class="welcome-section" aria-labelledby="welcomeTitle">
+      <div class="welcome-content">
+        <p class="eyebrow">Bugünün niyeti</p>
+
+        <h1 id="welcomeTitle">
+          Kalbine iyi geleni,
+          <span>birlikte sürdür.</span>
+        </h1>
+
+        <p class="welcome-description">
+          Kusursuz olmak için değil, samimiyetle devam edebilmek için
+          buradasınız.
+        </p>
+      </div>
+
+      <div class="date-card">
+        <span class="date-card-icon" aria-hidden="true">☾</span>
+
+        <div>
+          <span class="date-card-label">Bugün</span>
+          <strong id="currentDate">Tarih yükleniyor...</strong>
+          <small id="currentHijriDate">Hicri tarih hazırlanıyor...</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         GÜNÜN İÇERİĞİ
+    ==================================================== -->
+    <section class="section-block" aria-labelledby="dailyContentTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Günlük hatırlatmalar</p>
+          <h2 id="dailyContentTitle">Bugünün Manevi İçeriği</h2>
+        </div>
+
+        <span class="section-heading-symbol" aria-hidden="true">✦</span>
+      </div>
+
+      <div class="daily-content-grid">
+
+        <!-- Günün Esması -->
+        <article class="content-card esma-card">
+          <div class="content-card-header">
+            <div class="content-icon" aria-hidden="true">🌿</div>
+
+            <div>
+              <span class="content-label">Günün Esması</span>
+              <h3 id="dailyEsmaName">Er-Rahmân</h3>
+            </div>
+          </div>
+
+          <div class="content-card-body">
+            <p class="arabic-text" id="dailyEsmaArabic" lang="ar">
+              الرَّحْمَنُ
+            </p>
+
+            <p class="content-meaning" id="dailyEsmaMeaning">
+              Dünyada bütün kullarına merhamet eden.
+            </p>
+
+            <div class="content-meta">
+              <span>Önerilen tekrar</span>
+              <strong id="dailyEsmaCount">100 defa</strong>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="soft-button"
+            id="markEsmaCompleteButton"
+          >
+            <span aria-hidden="true">✓</span>
+            Okudum
+          </button>
+        </article>
+
+        <!-- Günün Ayeti -->
+        <article class="content-card verse-card">
+          <div class="content-card-header">
+            <div class="content-icon" aria-hidden="true">📖</div>
+
+            <div>
+              <span class="content-label">Günün Ayeti</span>
+              <h3 id="dailyVerseSource">Ra'd Suresi, 28</h3>
+            </div>
+          </div>
+
+          <div class="content-card-body">
+            <p class="arabic-text verse-arabic" id="dailyVerseArabic" lang="ar">
+              أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ
+            </p>
+
+            <p class="verse-reading" id="dailyVerseReading">
+              Elâ bi zikrillâhi tatmainnul kulûb.
+            </p>
+
+            <blockquote id="dailyVerseTranslation">
+              “Bilesiniz ki kalpler ancak Allah'ı anmakla huzur bulur.”
+            </blockquote>
+
+            <details class="tafsir-details">
+              <summary>Kısa tefsiri oku</summary>
+
+              <p id="dailyVerseTafsir">
+                İnsan kalbi yalnızca maddi imkânlarla tam anlamıyla huzura
+                kavuşmaz. Allah'ı hatırlamak, O'na güvenmek ve hayatın her
+                anında O'nun yakınlığını hissetmek kalbe gerçek bir sükûnet
+                kazandırır.
+              </p>
+            </details>
+          </div>
+        </article>
+
+        <!-- Günün Duası -->
+        <article class="content-card prayer-content-card">
+          <div class="content-card-header">
+            <div class="content-icon" aria-hidden="true">🤲</div>
+
+            <div>
+              <span class="content-label">Günün Duası</span>
+              <h3>Kalbe Ferahlık</h3>
+            </div>
+          </div>
+
+          <div class="content-card-body">
+            <p class="daily-prayer-text" id="dailyPrayerText">
+              Allah'ım, kalbimize huzur, niyetlerimize samimiyet ve
+              adımlarımıza istikrar nasip et.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="soft-button"
+            id="dailyPrayerAmenButton"
+          >
+            <span aria-hidden="true">🤍</span>
+            Âmin
+          </button>
+        </article>
+
+        <!-- Günün Challenge'ı -->
+        <article class="content-card challenge-card">
+          <div class="content-card-header">
+            <div class="content-icon" aria-hidden="true">✨</div>
+
+            <div>
+              <span class="content-label">Günün Küçük İyiliği</span>
+              <h3>Bugünün Challenge'ı</h3>
+            </div>
+          </div>
+
+          <div class="content-card-body">
+            <p id="dailyChallengeText">
+              Bugün bir kişiye içtenlikle güzel bir söz söyle.
+            </p>
+
+            <p class="gentle-note">
+              Küçük bir iyilik de büyük bir niyettir.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="soft-button"
+            id="markChallengeCompleteButton"
+          >
+            <span aria-hidden="true">✓</span>
+            Yaptım
+          </button>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         BUGÜNÜN TAKİBİ
+    ==================================================== -->
+    <section class="section-block" aria-labelledby="dailyTrackingTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Bugünün adımları</p>
+          <h2 id="dailyTrackingTitle">Günlük Takip</h2>
+        </div>
+
+        <p class="section-description">
+          Herkes yalnızca kendi kutularını işaretleyebilir.
+        </p>
+      </div>
+
+      <div class="user-cards-grid">
+
+        <!-- DAMLA KARTI -->
+        <article class="user-card active-user-card" data-user-card="damla">
+          <div class="user-card-header">
+            <div class="user-identity">
+              <div class="user-avatar damla-avatar">D</div>
+
+              <div>
+                <span class="user-card-label">Bugünkü niyetler</span>
+                <h3>Damla</h3>
+              </div>
+            </div>
+
+            <span class="active-user-badge" data-active-badge="damla">
+              Sen
+            </span>
+          </div>
+
+          <div class="progress-wrapper">
+            <div class="progress-info">
+              <span>Bugünkü ilerleme</span>
+              <strong id="damlaProgressText">0 / 10</strong>
+            </div>
+
+            <div
+              class="progress-bar"
+              role="progressbar"
+              aria-label="Damla günlük ilerleme"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <div
+                class="progress-fill"
+                id="damlaProgressFill"
+                style="width: 0%;"
+              ></div>
+            </div>
+          </div>
+
+          <div class="checklist-group">
+            <h4>
+              <span aria-hidden="true">🕌</span>
+              Namazlar
+            </h4>
+
+            <div class="checklist">
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="fajr"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Sabah</strong>
+                  <small>Fecirle başlayan niyet</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="dhuhr"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Öğle</strong>
+                  <small>Günün ortasında bir duruş</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="asr"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>İkindi</strong>
+                  <small>Kalbe verilen kısa mola</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="maghrib"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Akşam</strong>
+                  <small>Günü şükürle karşılama</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="isha"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Yatsı</strong>
+                  <small>Günü huzurla tamamlama</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="checklist-group">
+            <h4>
+              <span aria-hidden="true">🌿</span>
+              Manevi Gelişim
+            </h4>
+
+            <div class="checklist">
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="asma"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Esma</strong>
+                  <small>Bugünün Esması'nı okudum</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="quran"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Kur'an</strong>
+                  <small>Bugün Kur'an okudum</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="tafsir"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Tefsir</strong>
+                  <small>Bir ayetin anlamını düşündüm</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="dua"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Dua</strong>
+                  <small>Kalbimden geçenleri anlattım</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="damla"
+                  data-check="tafakkur"
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Tefekkür</strong>
+                  <small>Bugün kısa bir süre durup düşündüm</small>
+                </span>
+              </label>
+            </div>
+          </div>
+        </article>
+
+        <!-- HİLAL KARTI -->
+        <article class="user-card locked-user-card" data-user-card="hilal">
+          <div class="user-card-header">
+            <div class="user-identity">
+              <div class="user-avatar hilal-avatar">H</div>
+
+              <div>
+                <span class="user-card-label">Bugünkü niyetler</span>
+                <h3>Hilal</h3>
+              </div>
+            </div>
+
+            <span
+              class="active-user-badge hidden"
+              data-active-badge="hilal"
+            >
+              Sen
+            </span>
+          </div>
+
+          <div class="progress-wrapper">
+            <div class="progress-info">
+              <span>Bugünkü ilerleme</span>
+              <strong id="hilalProgressText">0 / 10</strong>
+            </div>
+
+            <div
+              class="progress-bar"
+              role="progressbar"
+              aria-label="Hilal günlük ilerleme"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <div
+                class="progress-fill"
+                id="hilalProgressFill"
+                style="width: 0%;"
+              ></div>
+            </div>
+          </div>
+
+          <div class="checklist-group">
+            <h4>
+              <span aria-hidden="true">🕌</span>
+              Namazlar
+            </h4>
+
+            <div class="checklist">
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="fajr"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Sabah</strong>
+                  <small>Fecirle başlayan niyet</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="dhuhr"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Öğle</strong>
+                  <small>Günün ortasında bir duruş</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="asr"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>İkindi</strong>
+                  <small>Kalbe verilen kısa mola</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="maghrib"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Akşam</strong>
+                  <small>Günü şükürle karşılama</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="isha"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Yatsı</strong>
+                  <small>Günü huzurla tamamlama</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="checklist-group">
+            <h4>
+              <span aria-hidden="true">🌿</span>
+              Manevi Gelişim
+            </h4>
+
+            <div class="checklist">
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="asma"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Esma</strong>
+                  <small>Bugünün Esması'nı okudum</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="quran"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Kur'an</strong>
+                  <small>Bugün Kur'an okudum</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="tafsir"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Tefsir</strong>
+                  <small>Bir ayetin anlamını düşündüm</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="dua"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Dua</strong>
+                  <small>Kalbimden geçenleri anlattım</small>
+                </span>
+              </label>
+
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  data-user="hilal"
+                  data-check="tafakkur"
+                  disabled
+                >
+
+                <span class="custom-checkbox" aria-hidden="true"></span>
+
+                <span class="check-text">
+                  <strong>Tefekkür</strong>
+                  <small>Bugün kısa bir süre durup düşündüm</small>
+                </span>
+              </label>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         BİRBİRİNE DUA ET
+    ==================================================== -->
+    <section
+      class="section-block prayer-section"
+      aria-labelledby="mutualPrayerTitle"
+    >
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Kalpten kalbe</p>
+          <h2 id="mutualPrayerTitle">Birbirine Dua Et</h2>
+        </div>
+
+        <span class="section-heading-symbol" aria-hidden="true">🤍</span>
+      </div>
+
+      <div class="mutual-prayer-grid">
+        <article class="mutual-prayer-card">
+          <div class="prayer-direction">
+            <div class="mini-user">
+              <span class="mini-avatar damla-avatar">D</span>
+              <strong>Damla</strong>
+            </div>
+
+            <span class="direction-arrow" aria-hidden="true">→</span>
+
+            <div class="mini-user">
+              <span class="mini-avatar hilal-avatar">H</span>
+              <strong>Hilal</strong>
+            </div>
+          </div>
+
+          <p>
+            Bugün Hilal için güzel bir dilekte bulun.
+          </p>
+
+          <button
+            type="button"
+            class="primary-button"
+            data-prayer-from="damla"
+            data-prayer-to="hilal"
+          >
+            <span aria-hidden="true">🤲</span>
+            Hilal için dua ettim
+          </button>
+        </article>
+
+        <article class="mutual-prayer-card">
+          <div class="prayer-direction">
+            <div class="mini-user">
+              <span class="mini-avatar hilal-avatar">H</span>
+              <strong>Hilal</strong>
+            </div>
+
+            <span class="direction-arrow" aria-hidden="true">→</span>
+
+            <div class="mini-user">
+              <span class="mini-avatar damla-avatar">D</span>
+              <strong>Damla</strong>
+            </div>
+          </div>
+
+          <p>
+            Bugün Damla için güzel bir dilekte bulun.
+          </p>
+
+          <button
+            type="button"
+            class="primary-button"
+            data-prayer-from="hilal"
+            data-prayer-to="damla"
+            disabled
+          >
+            <span aria-hidden="true">🤲</span>
+            Damla için dua ettim
+          </button>
+        </article>
+      </div>
+
+      <div class="mutual-prayer-result" id="mutualPrayerResult">
+        <span class="result-icon" aria-hidden="true">🤍</span>
+
+        <div>
+          <strong>Dualar kalpleri birbirine yaklaştırır.</strong>
+          <p>
+            İkiniz de dua ettiğinizde burada ortak mesajınız görünecek.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         BİRLİKTE ÂMİN
+    ==================================================== -->
+    <section class="section-block" aria-labelledby="sharedPrayerTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Birlikte Âmin</p>
+          <h2 id="sharedPrayerTitle">Ortak Dua Alanı</h2>
+        </div>
+
+        <span class="section-heading-symbol" aria-hidden="true">☾</span>
+      </div>
+
+      <div class="shared-prayer-layout">
+        <form class="shared-prayer-form" id="sharedPrayerForm">
+          <label for="sharedPrayerInput">
+            Duanı paylaş
+          </label>
+
+          <textarea
+            id="sharedPrayerInput"
+            name="sharedPrayer"
+            rows="5"
+            maxlength="500"
+            placeholder="Kalbinden geçen duayı buraya yaz..."
+          ></textarea>
+
+          <div class="form-footer">
+            <span>
+              <span id="prayerCharacterCount">0</span>/500
+            </span>
+
+            <button type="submit" class="primary-button">
+              <span aria-hidden="true">🌙</span>
+              Duayı paylaş
+            </button>
+          </div>
+        </form>
+
+        <div class="shared-prayers-list" id="sharedPrayersList">
+          <article class="shared-prayer-empty">
+            <span aria-hidden="true">🤲</span>
+            <h3>Henüz ortak dua yok</h3>
+            <p>
+              İlk duayı yazdığınızda burada birlikte “Âmin” diyebileceksiniz.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         GÜNLÜK NOT
+    ==================================================== -->
+    <section class="section-block" aria-labelledby="dailyNoteTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Kendine ayırdığın alan</p>
+          <h2 id="dailyNoteTitle">Bugün Kalbimde...</h2>
+        </div>
+
+        <span class="section-heading-symbol" aria-hidden="true">✎</span>
+      </div>
+
+      <div class="daily-note-card">
+        <label for="dailyNoteInput" class="visually-hidden">
+          Günlük manevi not
+        </label>
+
+        <textarea
+          id="dailyNoteInput"
+          rows="6"
+          maxlength="1000"
+          placeholder="Bugün kalbimde..."
+        ></textarea>
+
+        <div class="daily-note-footer">
+          <p>
+            Bu alan kişiseldir. Notlarını yalnızca sen görebilirsin.
+          </p>
+
+          <div class="note-actions">
+            <span id="noteSaveStatus" aria-live="polite">
+              Henüz kaydedilmedi
+            </span>
+
+            <button
+              type="button"
+              class="secondary-button"
+              id="saveDailyNoteButton"
+            >
+              Notu kaydet
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         ORTAK İSTATİSTİK
+    ==================================================== -->
+    <section class="section-block" aria-labelledby="statisticsTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Birlikte biriken güzellikler</p>
+          <h2 id="statisticsTitle">Bu Ay Birlikte</h2>
+        </div>
+
+        <button
+          type="button"
+          class="text-button"
+          id="openCalendarButton"
+        >
+          Takvimi aç
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+
+      <div class="statistics-grid">
+        <article class="statistic-card">
+          <span class="statistic-icon" aria-hidden="true">🕌</span>
+
+          <div>
+            <strong id="monthlyPrayerCount">0</strong>
+            <span>vakit namaz</span>
+          </div>
+        </article>
+
+        <article class="statistic-card">
+          <span class="statistic-icon" aria-hidden="true">📖</span>
+
+          <div>
+            <strong id="monthlyQuranCount">0</strong>
+            <span>Kur'an kaydı</span>
+          </div>
+        </article>
+
+        <article class="statistic-card">
+          <span class="statistic-icon" aria-hidden="true">🌿</span>
+
+          <div>
+            <strong id="monthlyEsmaCount">0</strong>
+            <span>Esma kaydı</span>
+          </div>
+        </article>
+
+        <article class="statistic-card">
+          <span class="statistic-icon" aria-hidden="true">🤍</span>
+
+          <div>
+            <strong id="monthlyDuaCount">0</strong>
+            <span>dua kaydı</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SERİ VE MANEVİ BAHÇE
+    ==================================================== -->
+    <section class="growth-grid">
+
+      <!-- Seri -->
+      <article class="streak-card">
+        <div class="streak-icon" aria-hidden="true">🔥</div>
+
+        <div>
+          <p class="eyebrow">Ortak istikrar</p>
+
+          <h2>
+            <span id="sharedStreakCount">0</span>
+            gündür devam ediyorsunuz
+          </h2>
+
+          <p id="sharedStreakMessage">
+            Her yeni gün, yeniden niyet etmek için güzel bir fırsat.
+          </p>
+        </div>
+      </article>
+
+      <!-- Manevi Bahçe -->
+      <article class="garden-card">
+        <div class="garden-content">
+          <p class="eyebrow">Manevi Bahçe</p>
+          <h2 id="gardenLevelTitle">Yeni Bir Tohum</h2>
+
+          <p id="gardenLevelDescription">
+            Birlikte devam ettikçe bahçeniz büyüyecek.
+          </p>
+
+          <div
+            class="garden-progress"
+            role="progressbar"
+            aria-label="Manevi Bahçe ilerlemesi"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div
+              class="garden-progress-fill"
+              id="gardenProgressFill"
+              style="width: 0%;"
+            ></div>
+          </div>
+
+          <small id="gardenProgressText">
+            İlk fideye 7 ortak gün kaldı.
+          </small>
+        </div>
+
+        <div class="garden-visual" id="gardenVisual" aria-hidden="true">
+          <span class="garden-ground"></span>
+          <span class="garden-plant">🌱</span>
+          <span class="garden-spark garden-spark-one">✦</span>
+          <span class="garden-spark garden-spark-two">✧</span>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- ===================================================
+         ROZETLER
+    ==================================================== -->
+    <section class="section-block" aria-labelledby="badgesTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Yolculuğun hatıraları</p>
+          <h2 id="badgesTitle">Rozetler</h2>
+        </div>
+
+        <p class="section-description">
+          Rozetler kıyaslamak için değil, birlikte geçirilen güzel günleri
+          hatırlamak içindir.
+        </p>
+      </div>
+
+      <div class="badges-grid">
+        <article class="badge-card locked" data-badge="first-seven-days">
+          <span class="badge-icon" aria-hidden="true">🌙</span>
+          <h3>İlk 7 Gün</h3>
+          <p>Birlikte 7 gün devam edin.</p>
+          <span class="badge-status">Kilitli</span>
+        </article>
+
+        <article class="badge-card locked" data-badge="thirty-days">
+          <span class="badge-icon" aria-hidden="true">⭐</span>
+          <h3>30 Gün</h3>
+          <p>Birlikte 30 günlük yolculuğu tamamlayın.</p>
+          <span class="badge-status">Kilitli</span>
+        </article>
+
+        <article class="badge-card locked" data-badge="quran-friend">
+          <span class="badge-icon" aria-hidden="true">📖</span>
+          <h3>Kur'an Dostu</h3>
+          <p>Birlikte düzenli Kur'an okumaya devam edin.</p>
+          <span class="badge-status">Kilitli</span>
+        </article>
+
+        <article class="badge-card locked" data-badge="asma-traveler">
+          <span class="badge-icon" aria-hidden="true">🌿</span>
+          <h3>Esma Yolcusu</h3>
+          <p>Esma kayıtlarınızla bahçenizi büyütün.</p>
+          <span class="badge-status">Kilitli</span>
+        </article>
+
+        <article class="badge-card locked" data-badge="prayer-streak">
+          <span class="badge-icon" aria-hidden="true">🕌</span>
+          <h3>Namaz Serisi</h3>
+          <p>Namaz takibinde ortak istikrar oluşturun.</p>
+          <span class="badge-status">Kilitli</span>
+        </article>
+
+        <article class="badge-card locked" data-badge="dua-traveler">
+          <span class="badge-icon" aria-hidden="true">🤲</span>
+          <h3>Dua Yolcusu</h3>
+          <p>Birbiriniz için dua etmeye devam edin.</p>
+          <span class="badge-status">Kilitli</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         TAKVİM
+    ==================================================== -->
+    <section
+      class="section-block calendar-section"
+      id="calendarSection"
+      aria-labelledby="calendarTitle"
+    >
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Geçmişe nazikçe bak</p>
+          <h2 id="calendarTitle">Aylık Takvim</h2>
+        </div>
+
+        <div class="calendar-navigation">
+          <button
+            type="button"
+            class="icon-button"
+            id="previousMonthButton"
+            aria-label="Önceki ay"
+          >
+            ←
+          </button>
+
+          <strong id="calendarMonthTitle">Temmuz 2026</strong>
+
+          <button
+            type="button"
+            class="icon-button"
+            id="nextMonthButton"
+            aria-label="Sonraki ay"
+          >
+            →
+          </button>
+        </div>
+      </div>
+
+      <div class="calendar-card">
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Pzt</span>
+          <span>Sal</span>
+          <span>Çar</span>
+          <span>Per</span>
+          <span>Cum</span>
+          <span>Cmt</span>
+          <span>Paz</span>
+        </div>
+
+        <div class="calendar-days" id="calendarDays">
+          <!-- app.js tarafından oluşturulacak -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =====================================================
+       GÜN DETAY PENCERESİ
+  ====================================================== -->
+  <div
+    class="modal-backdrop hidden"
+    id="dayDetailModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dayDetailTitle"
+  >
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Günlük kayıt</p>
+          <h2 id="dayDetailTitle">Gün Detayı</h2>
+        </div>
+
+        <button
+          type="button"
+          class="icon-button"
+          id="closeDayDetailButton"
+          aria-label="Pencereyi kapat"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="modal-content" id="dayDetailContent">
+        <!-- app.js tarafından doldurulacak -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       BİLDİRİM MESAJI
+  ====================================================== -->
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    <span class="toast-icon" aria-hidden="true">🌿</span>
+    <p id="toastMessage">Kaydedildi.</p>
+  </div>
+
+  <!-- =====================================================
+       ALT BİLGİ
+  ====================================================== -->
+  <footer class="footer">
+    <div>
+      <a href="index.html" class="footer-brand">
+        <span aria-hidden="true">🌙</span>
+        <strong>Niyet</strong>
+      </a>
+
+      <p>
+        Daha çok yapmak için yarışmak değil,<br>
+        birlikte ve samimiyetle devam edebilmek.
+      </p>
+    </div>
+
+    <nav class="footer-links" aria-label="Alt menü">
+      <a href="#dailyTrackingTitle">Günlük Takip</a>
+      <a href="#mutualPrayerTitle">Birbirine Dua Et</a>
+      <a href="#statisticsTitle">İstatistikler</a>
+      <a href="#calendarSection">Takvim</a>
+    </nav>
+
+    <p class="footer-copyright">
+      © <span id="currentYear">2026</span> Niyet
+    </p>
+  </footer>
+
+  <noscript>
+    <div class="noscript-message">
+      Niyet'in kayıt ve takvim özelliklerini kullanabilmek için
+      tarayıcınızda JavaScript'i etkinleştirmeniz gerekir.
+    </div>
+  </noscript>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
