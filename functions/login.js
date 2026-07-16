@@ -1,480 +1,577 @@
 "use strict";
 
-const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30;
-const MAX_USERNAME_LENGTH = 50;
-const MAX_PASSWORD_LENGTH = 200;
+/* =========================================================
+   NİYET - GİRİŞ SAYFASI
+   Dosya: functions/login.js
 
-const ALLOWED_ORIGINS = new Set([
-  "https://dammyy22.github.io",
-  "https://niyet.pages.dev"
-]);
+   Arayüz:
+   https://dammyy22.github.io/niyet/login.html
 
-export async function onRequestPost(context) {
-  const { request, env } = context;
+   API:
+   https://niyet.pages.dev/api/login
+========================================================= */
 
-  const origin = request.headers.get("Origin") || "";
-  const corsHeaders = createCorsHeaders(origin);
+const LOGIN_API_URL = "https://niyet.pages.dev/api/login";
 
-  try {
-    if (!env.DB) {
-      return jsonResponse(
-        {
-          success: false,
-          message: "Veritabanı bağlantısı yapılandırılmamış."
-        },
-        500,
-        corsHeaders
+const LOGIN_STORAGE_KEYS = {
+  activeUser: "niyet_active_user",
+  session: "niyet_session"
+};
+
+const ALLOWED_USERS = {
+  damla: {
+    id: "damla",
+    name: "Damla"
+  },
+
+  hilal: {
+    id: "hilal",
+    name: "Hilal"
+  }
+};
+
+let selectedUser = "damla";
+let toastTimer = null;
+
+/* =========================================================
+   SAYFA BAŞLANGICI
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+  initializeLoginPage();
+});
+
+function initializeLoginPage() {
+  applySavedTheme();
+  bindUserSelection();
+  bindPasswordToggle();
+  bindLoginForm();
+  bindInputEvents();
+  updateSelectedUserInterface();
+  fillSelectedUsername();
+}
+
+/* =========================================================
+   KULLANICI SEÇİMİ
+========================================================= */
+
+function bindUserSelection() {
+  const userOptions = document.querySelectorAll(
+    "[data-login-user]"
+  );
+
+  userOptions.forEach(option => {
+    option.addEventListener("click", () => {
+      const userId = option.dataset.loginUser;
+
+      if (!ALLOWED_USERS[userId]) {
+        return;
+      }
+
+      selectedUser = userId;
+
+      updateSelectedUserInterface();
+      fillSelectedUsername();
+      clearLoginErrors();
+
+      const passwordInput = document.getElementById("password");
+
+      if (passwordInput) {
+        passwordInput.value = "";
+        passwordInput.focus();
+      }
+    });
+  });
+}
+
+function updateSelectedUserInterface() {
+  const userOptions = document.querySelectorAll(
+    "[data-login-user]"
+  );
+
+  const selectedLoginUserInput = document.getElementById(
+    "selectedLoginUser"
+  );
+
+  userOptions.forEach(option => {
+    const isSelected =
+      option.dataset.loginUser === selectedUser;
+
+    option.classList.toggle("active", isSelected);
+
+    option.setAttribute(
+      "aria-pressed",
+      isSelected ? "true" : "false"
+    );
+  });
+
+  if (selectedLoginUserInput) {
+    selectedLoginUserInput.value = selectedUser;
+  }
+}
+
+function fillSelectedUsername() {
+  const usernameInput = document.getElementById("username");
+
+  if (!usernameInput) {
+    return;
+  }
+
+  usernameInput.value = selectedUser;
+}
+
+/* =========================================================
+   ŞİFREYİ GÖSTER / GİZLE
+========================================================= */
+
+function bindPasswordToggle() {
+  const passwordInput = document.getElementById("password");
+  const passwordToggle = document.getElementById(
+    "passwordToggle"
+  );
+
+  if (!passwordInput || !passwordToggle) {
+    return;
+  }
+
+  passwordToggle.addEventListener("click", () => {
+    const passwordIsVisible =
+      passwordInput.type === "text";
+
+    passwordInput.type = passwordIsVisible
+      ? "password"
+      : "text";
+
+    passwordToggle.textContent = passwordIsVisible
+      ? "👁"
+      : "🙈";
+
+    passwordToggle.setAttribute(
+      "aria-label",
+      passwordIsVisible
+        ? "Şifreyi göster"
+        : "Şifreyi gizle"
+    );
+
+    passwordToggle.title = passwordIsVisible
+      ? "Şifreyi göster"
+      : "Şifreyi gizle";
+  });
+}
+
+/* =========================================================
+   INPUT DAVRANIŞLARI
+========================================================= */
+
+function bindInputEvents() {
+  const usernameInput = document.getElementById("username");
+  const passwordInput = document.getElementById("password");
+
+  usernameInput?.addEventListener("input", () => {
+    clearFieldError("username", "usernameError");
+    hideLoginMessage();
+  });
+
+  passwordInput?.addEventListener("input", () => {
+    clearFieldError("password", "passwordError");
+    hideLoginMessage();
+  });
+}
+
+/* =========================================================
+   GİRİŞ FORMU
+========================================================= */
+
+function bindLoginForm() {
+  const loginForm = document.getElementById("loginForm");
+
+  if (!loginForm) {
+    return;
+  }
+
+  loginForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    clearLoginErrors();
+
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+
+    if (!usernameInput || !passwordInput) {
+      showLoginMessage(
+        "Giriş formu yüklenirken bir sorun oluştu.",
+        "error"
       );
+
+      return;
     }
 
-    const contentType = request.headers.get("content-type") || "";
+    const username = usernameInput.value
+      .trim()
+      .toLocaleLowerCase("tr-TR");
 
-    if (!contentType.includes("application/json")) {
-      return jsonResponse(
-        {
-          success: false,
-          message: "İstek JSON formatında gönderilmelidir."
-        },
-        415,
-        corsHeaders
-      );
-    }
+    const password = passwordInput.value;
 
-    let body;
-
-    try {
-      body = await request.json();
-    } catch {
-      return jsonResponse(
-        {
-          success: false,
-          message: "Gönderilen bilgiler okunamadı."
-        },
-        400,
-        corsHeaders
-      );
-    }
-
-    const username = normalizeUsername(body.username);
-    const password =
-      typeof body.password === "string" ? body.password : "";
-
-    const validationError = validateCredentials(
+    const formIsValid = validateLoginForm(
       username,
       password
     );
 
-    if (validationError) {
-      return jsonResponse(
-        {
-          success: false,
-          message: validationError
-        },
-        400,
-        corsHeaders
-      );
+    if (!formIsValid) {
+      return;
     }
-
-    const user = await env.DB
-      .prepare(`
-        SELECT
-          id,
-          name,
-          username,
-          password_hash,
-          is_active
-        FROM users
-        WHERE username = ?
-        LIMIT 1
-      `)
-      .bind(username)
-      .first();
-
-    if (!user || Number(user.is_active) !== 1) {
-      await performDummyPasswordVerification(password);
-
-      return invalidCredentialsResponse(corsHeaders);
-    }
-
-    const passwordIsValid = await verifyPassword(
-      password,
-      user.password_hash
-    );
-
-    if (!passwordIsValid) {
-      return invalidCredentialsResponse(corsHeaders);
-    }
-
-    const sessionToken = createSecureToken();
-    const sessionTokenHash = await sha256Hex(sessionToken);
-
-    const now = new Date();
-    const expiresAt = new Date(
-      now.getTime() + SESSION_DURATION_SECONDS * 1000
-    ).toISOString();
-
-    try {
-      await env.DB
-        .prepare(`
-          DELETE FROM sessions
-          WHERE expires_at <= ?
-        `)
-        .bind(now.toISOString())
-        .run();
-    } catch (cleanupError) {
-      console.warn(
-        "Eski oturumlar temizlenemedi:",
-        cleanupError
-      );
-    }
-
-    await env.DB
-      .prepare(`
-        INSERT INTO sessions (
-          user_id,
-          token_hash,
-          expires_at,
-          created_at,
-          last_used_at
-        )
-        VALUES (?, ?, ?, ?, ?)
-      `)
-      .bind(
-        user.id,
-        sessionTokenHash,
-        expiresAt,
-        now.toISOString(),
-        now.toISOString()
-      )
-      .run();
 
     /*
-      Arayüz GitHub Pages üzerinde olduğu için oturum token'ını
-      JSON içinde döndürüyoruz. Tarayıcı bunu localStorage'da
-      saklayacak.
-
-      İleride siteyi tamamen aynı alan adına taşırsak HttpOnly
-      cookie sistemine geri dönebiliriz.
+      Kullanıcı seçim kartı ile kullanıcı adı alanının
+      uyuşmasını sağlıyoruz.
     */
-    return jsonResponse(
-      {
-        success: true,
-        message: `Hoş geldin ${user.name}.`,
-        token: sessionToken,
-        expiresAt,
-        user: {
-          id: user.id,
-          name: user.name,
-          username: user.username
-        }
-      },
-      200,
-      corsHeaders
-    );
-  } catch (error) {
-    console.error("Giriş işlemi başarısız:", error);
+    if (username !== selectedUser) {
+      showLoginMessage(
+        `Seçili hesap ${ALLOWED_USERS[selectedUser].name}. Kullanıcı adı “${selectedUser}” olmalı.`,
+        "error"
+      );
 
-    return jsonResponse(
-      {
-        success: false,
-        message:
-          "Giriş sırasında beklenmeyen bir sorun oluştu."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
+      setFieldError(
+        "username",
+        "usernameError",
+        "Kullanıcı adı seçili hesapla uyuşmuyor."
+      );
 
-export function onRequestOptions(context) {
-  const origin = context.request.headers.get("Origin") || "";
+      return;
+    }
 
-  return new Response(null, {
-    status: 204,
-    headers: createCorsHeaders(origin)
+    await authenticateUser(username, password);
   });
 }
 
-export function onRequestGet(context) {
-  const origin = context.request.headers.get("Origin") || "";
+function validateLoginForm(username, password) {
+  let isValid = true;
 
-  return jsonResponse(
-    {
-      success: true,
-      message: "Niyet giriş API'si çalışıyor.",
-      method: "POST"
-    },
-    200,
-    createCorsHeaders(origin)
-  );
-}
+  if (!username) {
+    setFieldError(
+      "username",
+      "usernameError",
+      "Kullanıcı adını yazmalısın."
+    );
 
-export function onRequestPut(context) {
-  return methodNotAllowedResponse(context);
-}
-
-export function onRequestPatch(context) {
-  return methodNotAllowedResponse(context);
-}
-
-export function onRequestDelete(context) {
-  return methodNotAllowedResponse(context);
-}
-
-function methodNotAllowedResponse(context) {
-  const origin = context.request.headers.get("Origin") || "";
-
-  return jsonResponse(
-    {
-      success: false,
-      message: "Bu endpoint bu isteği kabul etmiyor."
-    },
-    405,
-    {
-      ...createCorsHeaders(origin),
-      Allow: "GET, POST, OPTIONS"
-    }
-  );
-}
-
-function createCorsHeaders(origin) {
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin)
-    ? origin
-    : "https://dammyy22.github.io";
-
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers":
-      "Content-Type, Authorization",
-    "Access-Control-Max-Age": "86400",
-    Vary: "Origin"
-  };
-}
-
-function normalizeUsername(value) {
-  if (typeof value !== "string") {
-    return "";
+    isValid = false;
   }
 
-  return value
+  if (!ALLOWED_USERS[username]) {
+    setFieldError(
+      "username",
+      "usernameError",
+      "Yalnızca Damla veya Hilal hesabıyla giriş yapılabilir."
+    );
+
+    isValid = false;
+  }
+
+  if (!password) {
+    setFieldError(
+      "password",
+      "passwordError",
+      "Şifreni yazmalısın."
+    );
+
+    isValid = false;
+  }
+
+  if (password.length > 200) {
+    setFieldError(
+      "password",
+      "passwordError",
+      "Şifre izin verilen uzunluğu aşıyor."
+    );
+
+    isValid = false;
+  }
+
+  return isValid;
+}
+
+/* =========================================================
+   GERÇEK API GİRİŞİ
+========================================================= */
+
+async function authenticateUser(username, password) {
+  const submitButton = document.querySelector(
+    ".login-submit-button"
+  );
+
+  setSubmitButtonLoading(submitButton, true);
+
+  showLoginMessage(
+    "Bilgilerin kontrol ediliyor...",
+    "success"
+  );
+
+  try {
+    const response = await fetch(LOGIN_API_URL, {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        username,
+        password
+      })
+    });
+
+    const result = await readJsonResponse(response);
+
+    if (!response.ok || !result?.success) {
+      const errorMessage =
+        result?.message ||
+        "Kullanıcı adı veya şifre hatalı.";
+
+      showLoginMessage(errorMessage, "error");
+      shakeLoginCard();
+
+      return;
+    }
+
+    if (
+      !result.user ||
+      !result.user.username ||
+      !result.token ||
+      !result.expiresAt
+    ) {
+      showLoginMessage(
+        "Sunucudan eksik oturum bilgisi geldi.",
+        "error"
+      );
+
+      return;
+    }
+
+    saveSession(result);
+
+    showLoginMessage(
+      `Hoş geldin ${result.user.name}.`,
+      "success"
+    );
+
+    showToast(
+      `${result.user.name} hesabına giriş yapıldı. 🌙`
+    );
+
+    window.setTimeout(() => {
+      window.location.href = "/niyet/index.html";
+    }, 700);
+  } catch (error) {
+    console.error("Giriş isteği başarısız:", error);
+
+    showLoginMessage(
+      "Giriş sunucusuna ulaşılamadı. Cloudflare bağlantısı veya internet erişimi engellenmiş olabilir.",
+      "error"
+    );
+
+    shakeLoginCard();
+  } finally {
+    setSubmitButtonLoading(submitButton, false);
+  }
+}
+
+async function readJsonResponse(response) {
+  const contentType =
+    response.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    return null;
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+/* =========================================================
+   OTURUM KAYDI
+========================================================= */
+
+function saveSession(result) {
+  const normalizedUsername = result.user.username
     .trim()
     .toLocaleLowerCase("tr-TR");
-}
 
-function validateCredentials(username, password) {
-  if (!username || !password) {
-    return "Kullanıcı adı ve şifre zorunludur.";
-  }
+  const session = {
+    token: result.token,
+    expiresAt: result.expiresAt,
 
-  if (username.length > MAX_USERNAME_LENGTH) {
-    return "Kullanıcı adı izin verilen uzunluğu aşıyor.";
-  }
-
-  if (password.length > MAX_PASSWORD_LENGTH) {
-    return "Şifre izin verilen uzunluğu aşıyor.";
-  }
-
-  return null;
-}
-
-async function verifyPassword(password, storedPasswordHash) {
-  if (
-    typeof password !== "string" ||
-    typeof storedPasswordHash !== "string"
-  ) {
-    return false;
-  }
-
-  const parts = storedPasswordHash.split("$");
-
-  if (parts.length !== 4) {
-    return false;
-  }
-
-  const [
-    algorithm,
-    iterationsText,
-    saltBase64,
-    expectedHashBase64
-  ] = parts;
-
-  if (algorithm !== "pbkdf2") {
-    return false;
-  }
-
-  const iterations = Number(iterationsText);
-
-  if (
-    !Number.isInteger(iterations) ||
-    iterations < 100000 ||
-    iterations > 1000000
-  ) {
-    return false;
-  }
-
-  try {
-    const salt = base64ToUint8Array(saltBase64);
-    const expectedHash = base64ToUint8Array(
-      expectedHashBase64
-    );
-
-    if (salt.length < 16 || expectedHash.length !== 32) {
-      return false;
-    }
-
-    const passwordKey = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(password),
-      {
-        name: "PBKDF2"
-      },
-      false,
-      ["deriveBits"]
-    );
-
-    const derivedBits = await crypto.subtle.deriveBits(
-      {
-        name: "PBKDF2",
-        hash: "SHA-256",
-        salt,
-        iterations
-      },
-      passwordKey,
-      256
-    );
-
-    const actualHash = new Uint8Array(derivedBits);
-
-    return timingSafeEqual(actualHash, expectedHash);
-  } catch (error) {
-    console.error("Şifre doğrulanamadı:", error);
-    return false;
-  }
-}
-
-async function performDummyPasswordVerification(password) {
-  try {
-    const dummySalt = new TextEncoder().encode(
-      "niyet-dummy-salt-2026"
-    );
-
-    const passwordKey = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(password || "invalid"),
-      {
-        name: "PBKDF2"
-      },
-      false,
-      ["deriveBits"]
-    );
-
-    await crypto.subtle.deriveBits(
-      {
-        name: "PBKDF2",
-        hash: "SHA-256",
-        salt: dummySalt,
-        iterations: 100000
-      },
-      passwordKey,
-      256
-    );
-  } catch {
-    // Bilerek boş bırakıldı.
-  }
-}
-
-function timingSafeEqual(first, second) {
-  if (
-    !(first instanceof Uint8Array) ||
-    !(second instanceof Uint8Array) ||
-    first.length !== second.length
-  ) {
-    return false;
-  }
-
-  let difference = 0;
-
-  for (let index = 0; index < first.length; index += 1) {
-    difference |= first[index] ^ second[index];
-  }
-
-  return difference === 0;
-}
-
-function createSecureToken() {
-  const randomBytes = new Uint8Array(32);
-
-  crypto.getRandomValues(randomBytes);
-
-  return uint8ArrayToBase64Url(randomBytes);
-}
-
-async function sha256Hex(value) {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value)
-  );
-
-  return Array.from(new Uint8Array(digest))
-    .map(byte => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function base64ToUint8Array(base64Value) {
-  const normalizedValue = base64Value
-    .replaceAll("-", "+")
-    .replaceAll("_", "/");
-
-  const paddedValue = normalizedValue.padEnd(
-    Math.ceil(normalizedValue.length / 4) * 4,
-    "="
-  );
-
-  const binaryString = atob(paddedValue);
-
-  return Uint8Array.from(
-    binaryString,
-    character => character.charCodeAt(0)
-  );
-}
-
-function uint8ArrayToBase64Url(bytes) {
-  let binaryString = "";
-
-  for (const byte of bytes) {
-    binaryString += String.fromCharCode(byte);
-  }
-
-  return btoa(binaryString)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replaceAll("=", "");
-}
-
-function invalidCredentialsResponse(corsHeaders) {
-  return jsonResponse(
-    {
-      success: false,
-      message: "Kullanıcı adı veya şifre hatalı."
+    user: {
+      id: result.user.id,
+      name: result.user.name,
+      username: normalizedUsername
     },
-    401,
-    corsHeaders
+
+    loggedIn: true,
+    createdAt: new Date().toISOString()
+  };
+
+  localStorage.setItem(
+    LOGIN_STORAGE_KEYS.activeUser,
+    normalizedUsername
+  );
+
+  localStorage.setItem(
+    LOGIN_STORAGE_KEYS.session,
+    JSON.stringify(session)
   );
 }
 
-function jsonResponse(
-  data,
-  status = 200,
-  additionalHeaders = {}
+/* =========================================================
+   GÖNDER BUTONU
+========================================================= */
+
+function setSubmitButtonLoading(button, isLoading) {
+  if (!button) {
+    return;
+  }
+
+  button.disabled = isLoading;
+
+  button.innerHTML = isLoading
+    ? `
+      <span aria-hidden="true">⏳</span>
+      Giriş yapılıyor...
+    `
+    : `
+      <span aria-hidden="true">🌙</span>
+      Giriş Yap
+    `;
+}
+
+/* =========================================================
+   HATA VE MESAJ YÖNETİMİ
+========================================================= */
+
+function setFieldError(
+  inputId,
+  errorElementId,
+  message
 ) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      ...additionalHeaders
-    }
+  const input = document.getElementById(inputId);
+  const errorElement = document.getElementById(
+    errorElementId
+  );
+
+  input?.classList.add("invalid");
+
+  if (errorElement) {
+    errorElement.textContent = message;
+  }
+}
+
+function clearFieldError(inputId, errorElementId) {
+  const input = document.getElementById(inputId);
+  const errorElement = document.getElementById(
+    errorElementId
+  );
+
+  input?.classList.remove("invalid");
+
+  if (errorElement) {
+    errorElement.textContent = "";
+  }
+}
+
+function clearLoginErrors() {
+  clearFieldError("username", "usernameError");
+  clearFieldError("password", "passwordError");
+  hideLoginMessage();
+}
+
+function hideLoginMessage() {
+  const loginMessage = document.getElementById(
+    "loginMessage"
+  );
+
+  if (!loginMessage) {
+    return;
+  }
+
+  loginMessage.textContent = "";
+  loginMessage.classList.add("hidden");
+  loginMessage.classList.remove("error", "success");
+}
+
+function showLoginMessage(message, type) {
+  const loginMessage = document.getElementById(
+    "loginMessage"
+  );
+
+  if (!loginMessage) {
+    return;
+  }
+
+  loginMessage.textContent = message;
+
+  loginMessage.classList.remove(
+    "hidden",
+    "error",
+    "success"
+  );
+
+  loginMessage.classList.add(type);
+}
+
+function shakeLoginCard() {
+  const loginCard = document.querySelector(".login-card");
+
+  if (!loginCard) {
+    return;
+  }
+
+  loginCard.classList.remove("login-shake");
+
+  window.requestAnimationFrame(() => {
+    loginCard.classList.add("login-shake");
   });
+
+  window.setTimeout(() => {
+    loginCard.classList.remove("login-shake");
+  }, 450);
+}
+
+/* =========================================================
+   TEMA
+========================================================= */
+
+function applySavedTheme() {
+  const savedTheme =
+    localStorage.getItem("niyet_theme") || "dark";
+
+  document.body.classList.toggle(
+    "light-theme",
+    savedTheme === "light"
+  );
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  const toastMessage = document.getElementById(
+    "toastMessage"
+  );
+
+  if (!toast || !toastMessage) {
+    return;
+  }
+
+  toastMessage.textContent = message;
+  toast.classList.add("show");
+
+  window.clearTimeout(toastTimer);
+
+  toastTimer = window.setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2600);
 }
