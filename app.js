@@ -2830,37 +2830,75 @@ function calculateMonthlyStatistics() {
 function calculateSharedStreak() {
   let streak = 0;
 
-  const cursor =
+  const today =
     new Date();
 
-  cursor.setHours(
+  today.setHours(
     0,
     0,
     0,
     0
   );
 
+  const todayKey =
+    formatDateKey(
+      today
+    );
+
+  const todayRecords =
+    dailyRecordsCache[
+      todayKey
+    ];
+
+  const damlaActiveToday =
+    hasAnyCompletedCheck(
+      todayRecords?.damla
+    );
+
+  const hilalActiveToday =
+    hasAnyCompletedCheck(
+      todayRecords?.hilal
+    );
+
+  const bothActiveToday =
+    damlaActiveToday &&
+    hilalActiveToday;
+
+  const cursor =
+    new Date(
+      today
+    );
+
+  /*
+    Bugün ikiniz de aktifseniz seri bugünden sayılır.
+    Bugün yalnızca biriniz aktifse veya hiç kayıt yoksa,
+    devam eden seri kaybolmasın diye dünden başlanır.
+  */
+  if (!bothActiveToday) {
+    cursor.setDate(
+      cursor.getDate() - 1
+    );
+  }
+
   while (true) {
     const dateKey =
-      formatDateKey(cursor);
+      formatDateKey(
+        cursor
+      );
 
     const dayRecords =
       dailyRecordsCache[
         dateKey
       ];
 
-    if (!dayRecords) {
-      break;
-    }
-
     const damlaHasActivity =
       hasAnyCompletedCheck(
-        dayRecords.damla
+        dayRecords?.damla
       );
 
     const hilalHasActivity =
       hasAnyCompletedCheck(
-        dayRecords.hilal
+        dayRecords?.hilal
       );
 
     if (
@@ -2891,9 +2929,19 @@ function calculateSharedStreak() {
     return streak;
   }
 
+  if (
+    !bothActiveToday &&
+    streak > 0
+  ) {
+    streakMessage.textContent =
+      `${streak} günlük ortak seriniz devam ediyor. Bugünün tamamlanması için ikinizin de en az bir kayıt eklemesi gerekiyor.`;
+
+    return streak;
+  }
+
   if (streak === 0) {
     streakMessage.textContent =
-      "Bugün yeniden niyet edebilirsiniz. Her başlangıç kıymetlidir.";
+      "Bugün birlikte en az birer adım attığınızda yeni seriniz başlayacak.";
   } else if (
     streak < 7
   ) {
