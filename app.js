@@ -226,8 +226,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  activeUser =
-    authenticatedUser.username;
+  activeUser = normalizeUsername(
+    authenticatedUser.username
+  );
+
+  if (!USERS[activeUser]) {
+    activeUser = getStoredActiveUser();
+  }
 
   await initializeApplication();
 });
@@ -937,11 +942,21 @@ async function toggleDailyContentAction(
   button,
   message
 ) {
-  const profileId =
-    profileIds[activeUser];
+  let profileId;
 
-  if (!profileId) {
+  try {
+    profileId =
+      await ensureProfileId(
+        activeUser
+      );
+  } catch (error) {
+    console.error(
+      "Aktif kullanıcı profili yüklenemedi:",
+      error
+    );
+
     showToast(
+      error.message ||
       "Aktif kullanıcı profili bulunamadı."
     );
 
@@ -1158,16 +1173,21 @@ function getStoredActiveUser() {
 
 function setActiveUser(userId) {
   const authenticatedUsername =
-    window
-      .niyetAuthenticatedUser
-      ?.username;
+    normalizeUsername(
+      window
+        .niyetAuthenticatedUser
+        ?.username
+    );
+
+  const normalizedUserId =
+    normalizeUsername(userId);
 
   if (
     !authenticatedUsername ||
     !USERS[
       authenticatedUsername
     ] ||
-    userId !==
+    normalizedUserId !==
       authenticatedUsername
   ) {
     return;
@@ -1315,7 +1335,50 @@ function updateEditableAreas() {
    PROFİLLER
 ========================================================= */
 
+function normalizeUsername(value) {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase("tr-TR");
+}
+
+async function ensureProfileId(
+  username = activeUser
+) {
+  const normalizedUsername =
+    normalizeUsername(username);
+
+  if (
+    profileIds[
+      normalizedUsername
+    ]
+  ) {
+    return profileIds[
+      normalizedUsername
+    ];
+  }
+
+  await loadProfileIds();
+
+  const profileId =
+    profileIds[
+      normalizedUsername
+    ];
+
+  if (!profileId) {
+    throw new Error(
+      `${normalizedUsername || "Aktif kullanıcı"} profil ID'si bulunamadı.`
+    );
+  }
+
+  return profileId;
+}
+
 async function loadProfileIds() {
+  activeUser =
+    normalizeUsername(
+      activeUser
+    );
+
   const { data, error } =
     await window.niyetSupabase
       .from("profiles")
@@ -1333,9 +1396,9 @@ async function loadProfileIds() {
   (data || []).forEach(
     profile => {
       const username =
-        String(
+        normalizeUsername(
           profile.username
-        ).toLowerCase();
+        );
 
       if (
         !USERS[username]
@@ -1510,13 +1573,9 @@ async function updateDailyCheck(
   }
 
   const profileId =
-    profileIds[userId];
-
-  if (!profileId) {
-    throw new Error(
-      "Kullanıcı profil ID'si bulunamadı."
+    await ensureProfileId(
+      userId
     );
-  }
 
   const todayKey =
     getTodayKey();
@@ -1722,17 +1781,29 @@ async function saveMutualPrayer(
     return;
   }
 
-  const fromProfileId =
-    profileIds[fromUser];
+  let fromProfileId;
+  let toProfileId;
 
-  const toProfileId =
-    profileIds[toUser];
+  try {
+    [
+      fromProfileId,
+      toProfileId
+    ] = await Promise.all([
+      ensureProfileId(
+        fromUser
+      ),
+      ensureProfileId(
+        toUser
+      )
+    ]);
+  } catch (error) {
+    console.error(
+      "Kullanıcı profilleri yüklenemedi:",
+      error
+    );
 
-  if (
-    !fromProfileId ||
-    !toProfileId
-  ) {
     showToast(
+      error.message ||
       "Kullanıcı profilleri bulunamadı."
     );
 
@@ -2058,11 +2129,21 @@ async function loadSharedPrayers() {
 async function saveSharedPrayer(
   prayerText
 ) {
-  const profileId =
-    profileIds[activeUser];
+  let profileId;
 
-  if (!profileId) {
+  try {
+    profileId =
+      await ensureProfileId(
+        activeUser
+      );
+  } catch (error) {
+    console.error(
+      "Aktif kullanıcı profili yüklenemedi:",
+      error
+    );
+
     showToast(
+      error.message ||
       "Aktif kullanıcı profili bulunamadı."
     );
 
@@ -2307,8 +2388,26 @@ async function toggleAmen(
     return;
   }
 
-  const profileId =
-    profileIds[activeUser];
+  let profileId;
+
+  try {
+    profileId =
+      await ensureProfileId(
+        activeUser
+      );
+  } catch (error) {
+    console.error(
+      "Aktif kullanıcı profili yüklenemedi:",
+      error
+    );
+
+    showToast(
+      error.message ||
+      "Aktif kullanıcı profili bulunamadı."
+    );
+
+    return;
+  }
 
   const hasSaidAmen =
     prayer.amenBy.includes(
@@ -2502,8 +2601,26 @@ async function saveDailyNote() {
     return;
   }
 
-  const profileId =
-    profileIds[activeUser];
+  let profileId;
+
+  try {
+    profileId =
+      await ensureProfileId(
+        activeUser
+      );
+  } catch (error) {
+    console.error(
+      "Aktif kullanıcı profili yüklenemedi:",
+      error
+    );
+
+    showToast(
+      error.message ||
+      "Aktif kullanıcı profili bulunamadı."
+    );
+
+    return;
+  }
 
   const todayKey =
     getTodayKey();
@@ -4971,72 +5088,6 @@ async function renderDailyContent() {
 /* =========================================================
    UYGULAMA BAŞLANGICINI ASENKRON HALE GETİR
 ========================================================= */
-
-async function initializeApplication() {
-  applySavedTheme();
-  renderCurrentDate();
-  renderCurrentYear();
-
-  await renderDailyContent();
-
-  setActiveUser(activeUser);
-  loadDailyRecords();
-  loadDailyContentActions();
-  loadMutualPrayers();
-  loadSharedPrayers();
-  loadDailyNote();
-  updateAllProgress();
-  calculateMonthlyStatistics();
-  calculateSharedStreak();
-  updateGarden();
-  updateBadges();
-  renderCalendar();
-
-  /*
-    Esma butonunu renderDailyContent bağladı.
-    Diğer olayları normal şekilde bağlıyoruz.
-  */
-  bindProfileMenuEvents();
-  bindThemeEvents();
-  bindCheckboxEvents();
-  bindMutualPrayerEvents();
-  bindSharedPrayerEvents();
-  bindDailyNoteEvents();
-  bindCalendarEvents();
-  bindModalEvents();
-
-  const markChallengeButton =
-    document.getElementById(
-      "markChallengeCompleteButton"
-    );
-
-  const dailyPrayerAmenButton =
-    document.getElementById(
-      "dailyPrayerAmenButton"
-    );
-
-  markChallengeButton?.addEventListener(
-    "click",
-    () => {
-      toggleDailyContentAction(
-        "challenge",
-        markChallengeButton,
-        "Bugünün güzel adımı kaydedildi."
-      );
-    }
-  );
-
-  dailyPrayerAmenButton?.addEventListener(
-    "click",
-    () => {
-      toggleDailyContentAction(
-        "dailyPrayerAmen",
-        dailyPrayerAmenButton,
-        "Âmin. 🤍"
-      );
-    }
-  );
-}
 
 /* =========================================================
    GEREKLİ TASARIMI OTOMATİK EKLE
